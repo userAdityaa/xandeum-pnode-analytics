@@ -1,43 +1,6 @@
 import { NextResponse } from "next/server";
-import axios from 'axios';
-
-const SEEDS = [
-  "173.212.220.65",
-  "161.97.97.41",
-  "192.190.136.36",
-  "192.190.136.38",
-];
-
-const RPC_TIMEOUT_MS = 4000; 
-const ACTIVE_TRESHOLD_SECONDS = 60;
-
-async function callPRPC(seed: string, method: string) { 
-    const controller = new AbortController(); 
-    const timeout = setTimeout(() => controller.abort(), RPC_TIMEOUT_MS);
-
-    try { 
-        const res = await axios.post(
-            `http://${seed}:6000/rpc`,
-            {
-                jsonrpc: "2.0",
-                id: 1,
-                method,
-            },
-            {
-                timeout: RPC_TIMEOUT_MS,
-                headers: {
-                    "Content-Type": "application/json",
-                },
-            }
-        );
-
-        console.log("what is the response: ", res);
-
-        return res.data.result;
-    } finally { 
-        clearTimeout(timeout);
-    }
-}
+import { SEEDS,  ACTIVE_THRESHOLD_SECONDS } from "@/app/lib/prpc/constants";
+import { callPRPC } from "@/app/lib/prpc/client";
 
 async function fetchFromAnySeed(method: string) { 
   for (const seed of SEEDS) { 
@@ -65,7 +28,7 @@ export async function GET() {
                 version: pod.version,
                 lastSeen: pod.last_seen_timestamp, 
                 status: 
-                secondsAgo <= ACTIVE_TRESHOLD_SECONDS ? "active" : "inactive",
+                secondsAgo <= ACTIVE_THRESHOLD_SECONDS ? "active" : "inactive",
             }
         });
 
