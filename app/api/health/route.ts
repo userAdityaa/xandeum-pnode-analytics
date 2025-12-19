@@ -1,5 +1,3 @@
-export const runtime = "nodejs";
-
 import { NextResponse } from "next/server";
 import { callPRPCWithFallback } from "@/app/lib/prpc/client";
 
