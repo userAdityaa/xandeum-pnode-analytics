@@ -1,38 +1,8 @@
 import { NextResponse } from "next/server";
 import { SEEDS,  ACTIVE_THRESHOLD_SECONDS } from "@/app/lib/prpc/constants";
 import { callPRPC } from "@/app/lib/prpc/client";
+import { computeNodeHealth } from "@/app/lib/analytics/health";
 import { PNode, PNodesResponse } from "@/app/lib/prpc/types";
-
-function freshnessScore(secondsAgo: number): number {
-  if (secondsAgo <= ACTIVE_THRESHOLD_SECONDS) return 1.0;        // fully healthy
-  if (secondsAgo <= ACTIVE_THRESHOLD_SECONDS * 2) return 0.7;    // delayed
-  if (secondsAgo <= ACTIVE_THRESHOLD_SECONDS * 5) return 0.4;    // unstable
-  return 0.1;                                                    // mostly offline
-}
-
-function versionScore(
-  nodeVersion: string,
-  latestVersion?: string
-): number {
-  if (!latestVersion) return 1; // fallback
-  return nodeVersion === latestVersion ? 1.0 : 0.6;
-}
-
-function computeHealthScore(
-  secondsAgo: number,
-  nodeVersion: string,
-  latestVersion?: string
-): number {
-  const freshness = freshnessScore(secondsAgo);
-  const version = versionScore(nodeVersion, latestVersion);
-
-  const health =
-    freshness * 0.7 +
-    version * 0.3;
-
-  return Math.round(health * 100);
-}
-
 
 async function fetchFromAnySeed(method: string) { 
   for (const seed of SEEDS) { 
@@ -64,7 +34,7 @@ export async function GET() {
 
             const status = secondsAgo <= ACTIVE_THRESHOLD_SECONDS ? "active" : "inactive";
 
-            const healthScore = computeHealthScore(
+            const healthScore = computeNodeHealth(
               secondsAgo, 
               pod.version, 
               latestVersion

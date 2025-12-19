@@ -14,7 +14,7 @@ export async function callPRPC<T = any>(
     `http://${seed}:${RPC_PORT}${RPC_PATH}`,
     {
       jsonrpc: "2.0",
-      id: 1,
+      id: 2,
       method,
     },
     {
