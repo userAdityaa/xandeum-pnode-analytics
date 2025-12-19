@@ -17,29 +17,51 @@ async function fetchFromAnySeed(method: string) {
 export async function GET() { 
     try { 
         const podsResult = await fetchFromAnySeed("get-pods"); 
-
         const now = Math.floor(Date.now() / 1000);
 
-        const pNodes: PNode[] = podsResult.pods.map((pod: any) => { 
+        const rawNodes = podsResult.pods;
+
+        const versionCount: Record<string, number> = {}; 
+        for(const pod of rawNodes) { 
+          versionCount[pod.version] = (versionCount[pod.version] ?? 0) + 1;
+        }
+
+        const latestVersion = Object.entries(versionCount).sort((a, b) => b[1] - a[1])[0]?.[0];
+
+        const pNodes: PNode[] = rawNodes.map((pod: any) => { 
             const secondsAgo = now - pod.last_seen_timestamp;
+
+            const status = secondsAgo <= ACTIVE_THRESHOLD_SECONDS ? "active" : "inactive";
+
+            const healthScore = status === "active" ? 100: 30;
+
+            const flags: string[] = []; 
+            if(status === "inactive") flags.push("offline"); 
+            if(pod.version !== latestVersion) flags.push("outdated");
 
             return { 
                 id: pod.address, 
                 version: pod.version,
                 lastSeen: pod.last_seen_timestamp, 
-                status: 
-                secondsAgo <= ACTIVE_THRESHOLD_SECONDS ? "active" : "inactive",
+                status, 
+                healthScore, 
+                flags,
             }
         });
 
         const active = pNodes.filter(p => p.status === "active").length; 
         const inactive = pNodes.length - active;
         
+        const networkHealth = Math.round((active / pNodes.length) * 100); 
+
         const response: PNodesResponse = { 
           summary: { 
             totalKnown: podsResult.total_count, 
             active, 
             inactive, 
+            networkHealth, 
+            lastUpdated: now, 
+            versionDistribution: versionCount,
           }, 
           pNodes,
         };

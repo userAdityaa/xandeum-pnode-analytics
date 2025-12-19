@@ -11,6 +11,9 @@ export interface PNodeSummary {
     totalKnown: number; 
     active: number; 
     inactive: number;
+    networkHealth: number; 
+    lastUpdated: number;
+    versionDistribution: Record<string, number>;
 }
 
 export interface PNodesResponse { 
