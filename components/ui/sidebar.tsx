@@ -281,7 +281,7 @@ const SidebarTrigger = React.forwardRef<
       data-sidebar="trigger"
       variant="ghost"
       size="icon"
-      className={cn("h-7 w-7", className)}
+      className={cn("h-7 w-7 bg-gradient-to-b from-white/15 to-white/5 backdrop-blur-xl border border-white/30 shadow-[inset_0_1px_1px_0_rgba(255,255,255,0.3),0_1px_3px_0_rgba(0,0,0,0.2)] hover:from-white/20 hover:to-white/10", className)}
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()
@@ -521,7 +521,7 @@ const SidebarMenuItem = React.forwardRef<
 SidebarMenuItem.displayName = "SidebarMenuItem"
 
 const sidebarMenuButtonVariants = cva(
-  "peer/menu-button flex w-full items-center gap-3 overflow-hidden rounded-lg p-2.5 text-left text-sm outline-none transition-all duration-200 hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-sidebar-ring active:bg-white/5 disabled:pointer-events-none disabled:opacity-50 group-has-[[data-sidebar=menu-action]]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-white/8 data-[active=true]:font-medium data-[state=open]:hover:bg-white/5 group-data-[collapsible=icon]:!size-9 group-data-[collapsible=icon]:!p-2 [&>span:last-child]:truncate [&>span:last-child]:text-gray-300 [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-gray-400",
+  "peer/menu-button flex w-full items-center gap-3 overflow-hidden rounded-lg p-2.5 text-left text-sm outline-none transition-all duration-200 hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-sidebar-ring active:bg-white/5 disabled:pointer-events-none disabled:opacity-50 group-has-[[data-sidebar=menu-action]]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-gradient-to-b data-[active=true]:from-white/15 data-[active=true]:to-white/5 data-[active=true]:backdrop-blur-xl data-[active=true]:border data-[active=true]:border-white/30 data-[active=true]:shadow-[inset_0_1px_1px_0_rgba(255,255,255,0.3),0_1px_3px_0_rgba(0,0,0,0.2)] data-[active=true]:font-medium data-[state=open]:hover:bg-white/5 group-data-[collapsible=icon]:!size-9 group-data-[collapsible=icon]:!p-2 [&>span:last-child]:truncate [&>span:last-child]:text-gray-300 [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-gray-400",
   {
     variants: {
       variant: {

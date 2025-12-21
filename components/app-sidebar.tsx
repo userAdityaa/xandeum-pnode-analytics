@@ -83,7 +83,7 @@ export function AppSidebar() {
         </SidebarMenu>
         <button 
           onClick={toggleSidebar}
-          className="absolute -right-8 top-1/2 -translate-y-1/2 z-10 h-6 w-6 rounded-full border border-sidebar-border bg-sidebar shadow-md hover:bg-sidebar-accent flex items-center justify-center transition-colors"
+          className="absolute -right-8 top-1/2 -translate-y-1/2 z-10 h-6 w-6 rounded-full bg-gradient-to-b from-white/15 to-white/5 backdrop-blur-xl border border-white/30 shadow-[inset_0_1px_1px_0_rgba(255,255,255,0.3),0_1px_3px_0_rgba(0,0,0,0.2)] hover:from-white/20 hover:to-white/10 flex items-center justify-center transition-all"
         >
           {state === "expanded" ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
         </button>
