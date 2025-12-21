@@ -31,13 +31,15 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SidebarProvider defaultOpen>
-          <AppSidebar />
-          <SidebarInset>
-            <Navbar />
-            <main className="flex-1 overflow-auto p-4">
-              {children}
-            </main>
-          </SidebarInset>
+          <div className="flex min-h-screen w-full">
+            <AppSidebar />
+            <SidebarInset className="flex flex-col flex-1">
+              <Navbar />
+              <main className="flex-1 overflow-auto">
+                {children}
+              </main>
+            </SidebarInset>
+          </div>
         </SidebarProvider>
       </body>
     </html>
