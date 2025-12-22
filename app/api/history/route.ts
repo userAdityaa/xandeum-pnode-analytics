@@ -9,6 +9,7 @@ interface TrendData {
   versionDrift: number
 }
 
+// Fallback to mock data if real data is not available
 function generateMockDataPoint(date: Date): TrendData {
   const month = date.toLocaleDateString('en-US', { month: 'short' })
   const day = date.getDate()

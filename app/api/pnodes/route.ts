@@ -4,6 +4,50 @@ import { callPRPC } from "@/app/lib/prpc/client";
 import { computeNodeHealth } from "@/app/lib/analytics/health";
 import { PNode, PNodesResponse } from "@/app/lib/prpc/types";
 
+interface GeoLocation {
+  country?: string;
+  city?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+// Cache for IP geolocation to avoid excessive API calls
+const geoCache = new Map<string, GeoLocation>();
+
+async function getGeolocation(ip: string): Promise<GeoLocation> {
+  if (geoCache.has(ip)) {
+    return geoCache.get(ip)!;
+  }
+
+  try {
+    // Using ip-api.com free tier (45 requests/minute)
+    const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,city,lat,lon`, {
+      signal: AbortSignal.timeout(3000)
+    });
+    
+    if (!response.ok) {
+      throw new Error('Geolocation API failed');
+    }
+    
+    const data = await response.json();
+    
+    if (data.status === 'success') {
+      const geo = {
+        country: data.country,
+        city: data.city,
+        latitude: data.lat,
+        longitude: data.lon
+      };
+      geoCache.set(ip, geo);
+      return geo;
+    }
+  } catch (error) {
+    console.error(`Failed to fetch geolocation for ${ip}:`, error);
+  }
+  
+  return {};
+}
+
 async function fetchFromAnySeed(method: string) { 
   for (const seed of SEEDS) { 
     try { 
@@ -29,7 +73,16 @@ export async function GET() {
 
         const latestVersion = Object.entries(versionCount).sort((a, b) => b[1] - a[1])[0]?.[0];
 
-        const pNodes: PNode[] = rawNodes.map((pod: any) => { 
+        // Fetch geolocation for all nodes in parallel
+        const geoPromises = rawNodes.map((pod: any) => {
+          // Extract IP from address (format might be IP:port or just IP)
+          const ip = pod.address.split(':')[0];
+          return getGeolocation(ip);
+        });
+        
+        const geoData = await Promise.all(geoPromises);
+        
+        const pNodes: PNode[] = rawNodes.map((pod: any, index: number) => { 
             const secondsAgo = now - pod.last_seen_timestamp;
 
             const status = secondsAgo <= ACTIVE_THRESHOLD_SECONDS ? "active" : "inactive";
@@ -51,6 +104,7 @@ export async function GET() {
                 status, 
                 healthScore, 
                 flags,
+                ...geoData[index]
             }
         });
 
@@ -58,6 +112,14 @@ export async function GET() {
         const inactive = pNodes.length - active;
         
         const networkHealth = Math.round((active / pNodes.length) * 100); 
+
+        // Calculate country distribution
+        const countryCount: Record<string, number> = {};
+        for (const node of pNodes) {
+          if (node.country) {
+            countryCount[node.country] = (countryCount[node.country] ?? 0) + 1;
+          }
+        }
 
         const response: PNodesResponse = { 
           summary: { 
@@ -67,6 +129,7 @@ export async function GET() {
             networkHealth, 
             lastUpdated: now, 
             versionDistribution: versionCount,
+            countryDistribution: countryCount,
           }, 
           pNodes,
         };
