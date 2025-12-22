@@ -2,6 +2,7 @@
 
 import { OverviewCards } from "@/components/overview-cards"
 import { NetworkTrendsChart } from "@/components/network-trends-chart"
+import { VersionDistributionChart, CountryDistributionChart } from "@/components/distribution-charts"
 import { useSidebar } from "@/components/ui/sidebar"
 
 export default function Home() { 
@@ -18,10 +19,28 @@ export default function Home() {
       <div>
       </div>
       
+      {/* Row 1: Overview Cards (Currently 5) Showing current Health status along with version */}
       <OverviewCards />
 
-      {/* Network Trends */}
-      <NetworkTrendsChart />
+      {/* Row 2: Network Trends and Version Distribution */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <NetworkTrendsChart />
+        </div>
+        <div className="lg:col-span-1">
+          <VersionDistributionChart />
+        </div>
+      </div>
+
+      {/* Row 3: Country Distribution on the right */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="lg:col-span-1">
+          {/* Empty space on the left */}
+        </div>
+        <div className="lg:col-span-1">
+          <CountryDistributionChart />
+        </div>
+      </div>
     </div>
   )
 }
