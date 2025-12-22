@@ -43,12 +43,6 @@ export function NetworkTrendsChart() {
         setData(result.data)
         setHasRealData(result.hasRealData)
         setRealDataPoints(result.realDataPoints)
-        
-        console.log('Chart data updated:', {
-          realDataPoints: result.realDataPoints,
-          totalPoints: result.totalPoints,
-          latestPoint: result.data[result.data.length - 1]
-        })
       } catch (error) {
         console.error('Failed to update chart data:', error)
       } finally {
@@ -69,7 +63,7 @@ export function NetworkTrendsChart() {
 
   if (loading) {
     return (
-      <div className="rounded-xl bg-sidebar/40 backdrop-blur-xl p-6 h-[320px] animate-pulse" />
+      <div className="rounded-xl bg-sidebar/40 backdrop-blur-xl p-6 h-80 animate-pulse" />
     )
   }
 
@@ -91,7 +85,7 @@ export function NetworkTrendsChart() {
   }
 
   return (
-    <div className="rounded-xl bg-sidebar/40 backdrop-blur-xl p-6 h-[320px] relative overflow-hidden group hover:-translate-y-0.5 transition-all duration-500 cursor-pointer"
+    <div className="rounded-xl bg-sidebar/40 backdrop-blur-xl p-6 h-80 relative overflow-hidden group hover:-translate-y-0.5 transition-all duration-500 cursor-pointer"
       style={{
         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
       }}
