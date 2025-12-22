@@ -95,16 +95,31 @@ export function VersionDistributionChart() {
 
   return (
     <div 
-      className="rounded-xl bg-sidebar/40 backdrop-blur-xl p-6 h-80 relative overflow-hidden group hover:-translate-y-0.5 transition-all duration-500 cursor-pointer"
+      className="rounded-xl bg-sidebar/60 backdrop-blur-xl p-6 h-80 relative overflow-hidden group hover:-translate-y-2 hover:scale-[1.005] transition-all duration-500 cursor-pointer border-2 border-white/20"
       style={{
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+        boxShadow: '0 25px 80px rgba(0, 0, 0, 0.6), 0 15px 35px rgba(0, 0, 0, 0.5), 0 5px 15px rgba(0, 0, 0, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.2), inset 0 -3px 6px rgba(0, 0, 0, 0.4)',
+        transform: 'perspective(1000px) rotateX(2deg)',
       }}
     >
+      {/* Top highlight edge */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+      
+      {/* Bottom shadow edge */}
+      <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-t from-black/30 to-transparent" />
+      
+      {/* 3D depth layer */}
+      <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-black/30" />
+      
       {/* Glass reflection effect */}
-      <div className="absolute inset-0 bg-linear-to-br from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       
       {/* Gradient background */}
-      <div className="absolute inset-0 bg-linear-to-br from-purple-500/20 via-blue-500/10 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
+      <div className="absolute inset-0 bg-linear-to-br from-purple-500/40 via-blue-500/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-500" />
+      
+      {/* Elevated border glow */}
+      <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{
+        boxShadow: 'inset 0 0 30px rgba(147, 51, 234, 0.4), 0 0 40px rgba(147, 51, 234, 0.3)'
+      }} />
 
       <div className="relative z-10 h-full flex flex-col">
         {/* Header */}
@@ -292,23 +307,36 @@ export function CountryDistributionChart() {
 
   return (
     <div 
-      className="rounded-xl bg-sidebar/40 backdrop-blur-xl p-6 h-80 relative overflow-hidden group hover:-translate-y-0.5 transition-all duration-500 cursor-pointer"
+      className="rounded-xl bg-sidebar/60 backdrop-blur-xl p-6 h-80 relative overflow-hidden group hover:-translate-y-2 hover:scale-[1.005] transition-all duration-500 cursor-pointer border-2 border-white/20"
       style={{
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+        boxShadow: '0 25px 80px rgba(0, 0, 0, 0.6), 0 15px 35px rgba(0, 0, 0, 0.5), 0 5px 15px rgba(0, 0, 0, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.2), inset 0 -3px 6px rgba(0, 0, 0, 0.4)',
+        transform: 'perspective(1000px) rotateX(2deg)',
       }}
     >
+      {/* Top highlight edge */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+      
+      {/* Bottom shadow edge */}
+      <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-t from-black/30 to-transparent" />
+      
+      {/* 3D depth layer */}
+      <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-black/30" />
+      
       {/* Glass reflection effect */}
-      <div className="absolute inset-0 bg-linear-to-br from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       
       {/* Gradient background */}
-      <div className="absolute inset-0 bg-linear-to-br from-emerald-500/20 via-cyan-500/10 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
+      <div className="absolute inset-0 bg-linear-to-br from-blue-500/40 via-cyan-500/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-500" />
+      
+      {/* Elevated border glow */}
+      <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{
+        boxShadow: 'inset 0 0 30px rgba(59, 130, 246, 0.4), 0 0 40px rgba(59, 130, 246, 0.3)'
+      }} />
 
       <div className="relative z-10 h-full flex flex-col">
         <div className="mb-3">
           <h3 className="text-sm font-semibold text-sidebar-foreground">Country Distribution</h3>
-          <p className="text-[10px] text-sidebar-foreground/50 mt-0.5">
-            {selectedCountry ? 'City breakdown' : `${countryData.length} countries • Click a bar for city details`}
-          </p>
+          <p className="text-[10px] text-sidebar-foreground/50 mt-0.5">{selectedCountry ? 'City breakdown' : `${countryData.length} countries • Click a bar for city details`}</p>
         </div>
 
         {selectedCountry ? (
@@ -374,14 +402,14 @@ export function CountryDistributionChart() {
               const percentage = totalCountries > 0 ? (item.value / totalCountries) * 100 : 0
               const maxValue = countryData[0]?.value || 1
               const widthPercentage = (item.value / maxValue) * 100
-              const isSelected = selectedCountry!.name === item.name
+              const isSelected = selectedCountry?.name === item.name
               
               return (
                 <div key={index}>
                   <div 
                     className="flex items-center gap-2 cursor-pointer hover:bg-white/5 rounded px-1 py-0.5 transition-all"
                     onClick={() => {
-                      if (selectedCountry!.name === item.name) {
+                      if (selectedCountry?.name === item.name) {
                         setSelectedCountry(null)
                       } else {
                         setSelectedCountry(item)

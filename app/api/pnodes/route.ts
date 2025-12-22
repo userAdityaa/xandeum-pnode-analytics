@@ -22,7 +22,7 @@ async function getGeolocation(ip: string): Promise<GeoLocation> {
   try {
     // Using ip-api.com free tier (45 requests/minute)
     const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,city,lat,lon`, {
-      signal: AbortSignal.timeout(3000)
+      signal: AbortSignal.timeout(2000)
     });
     
     if (!response.ok) {
@@ -42,7 +42,11 @@ async function getGeolocation(ip: string): Promise<GeoLocation> {
       return geo;
     }
   } catch (error) {
-    console.error(`Failed to fetch geolocation for ${ip}:`, error);
+    // Silently fail for geolocation - it's not critical
+    // Only log if it's not a timeout error to reduce noise
+    if (!(error instanceof Error && error.name === 'TimeoutError')) {
+      console.error(`Failed to fetch geolocation for ${ip}:`, error);
+    }
   }
   
   return {};
@@ -73,14 +77,28 @@ export async function GET() {
 
         const latestVersion = Object.entries(versionCount).sort((a, b) => b[1] - a[1])[0]?.[0];
 
-        // Fetch geolocation for all nodes in parallel
-        const geoPromises = rawNodes.map((pod: any) => {
-          // Extract IP from address (format might be IP:port or just IP)
-          const ip = pod.address.split(':')[0];
-          return getGeolocation(ip);
-        });
+        // Fetch geolocation with concurrency limit and timeout
+        const batchSize = 10;
+        const geoData: GeoLocation[] = new Array(rawNodes.length).fill({});
         
-        const geoData = await Promise.all(geoPromises);
+        // Process in batches to avoid overwhelming the API
+        const fetchWithTimeout = async () => {
+          for (let i = 0; i < rawNodes.length; i += batchSize) {
+            const batch = rawNodes.slice(i, i + batchSize);
+            const batchPromises = batch.map(async (pod: any, batchIndex: number) => {
+              const ip = pod.address.split(':')[0];
+              const geo = await getGeolocation(ip);
+              geoData[i + batchIndex] = geo;
+            });
+            await Promise.all(batchPromises);
+          }
+        };
+        
+        // Race between fetching geo data and a 3-second timeout
+        await Promise.race([
+          fetchWithTimeout(),
+          new Promise(resolve => setTimeout(resolve, 3000))
+        ]);
         
         const pNodes: PNode[] = rawNodes.map((pod: any, index: number) => { 
             const secondsAgo = now - pod.last_seen_timestamp;

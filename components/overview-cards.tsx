@@ -153,27 +153,38 @@ export function OverviewCards() {
           className={`
             relative group
             rounded-xl p-4
-            bg-sidebar/40 backdrop-blur-xl
+            bg-sidebar/60 backdrop-blur-xl
             transition-all duration-500
             overflow-hidden
+            border-2 border-white/20
             ${card.glowColor}
             hover:shadow-2xl hover:shadow-${card.glowColor}
-            hover:-translate-y-0.5
+            hover:-translate-y-2 hover:scale-[1.005]
             cursor-pointer
           `}
           style={{
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+            boxShadow: '0 25px 80px rgba(0, 0, 0, 0.6), 0 15px 35px rgba(0, 0, 0, 0.5), 0 5px 15px rgba(0, 0, 0, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.2), inset 0 -3px 6px rgba(0, 0, 0, 0.4)',
+            transform: 'perspective(1000px) rotateX(2deg)',
           }}
         >
+          {/* Top highlight edge */}
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+          
+          {/* Bottom shadow edge */}
+          <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-t from-black/30 to-transparent" />
+          
+          {/* 3D depth layer */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-black/30" />
+          
           {/* Glass reflection effect */}
-          <div className="absolute inset-0 bg-linear-to-br from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           
           {/* Gradient background */}
           <div className={`
             absolute inset-0 
             bg-linear-to-br ${card.gradient}
-            opacity-60
-            group-hover:opacity-80
+            opacity-80
+            group-hover:opacity-100
             transition-opacity duration-500
           `} />
           
