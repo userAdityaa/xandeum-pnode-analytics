@@ -153,31 +153,37 @@ export function OverviewCards() {
           className={`
             relative group
             rounded-xl p-4
-            bg-sidebar
-            border border-sidebar-border
-            hover:border-sidebar-border/80
-            transition-all duration-300
+            bg-sidebar/40 backdrop-blur-xl
+            transition-all duration-500
             overflow-hidden
             ${card.glowColor}
-            hover:shadow-lg
+            hover:shadow-2xl hover:shadow-${card.glowColor}
+            hover:-translate-y-0.5
+            cursor-pointer
           `}
+          style={{
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+          }}
         >
+          {/* Glass reflection effect */}
+          <div className="absolute inset-0 bg-linear-to-br from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          
           {/* Gradient background */}
           <div className={`
             absolute inset-0 
-            bg-gradient-to-br ${card.gradient}
-            opacity-50
-            group-hover:opacity-70
-            transition-opacity duration-300
+            bg-linear-to-br ${card.gradient}
+            opacity-60
+            group-hover:opacity-80
+            transition-opacity duration-500
           `} />
           
           {/* Border gradient overlay */}
           <div className={`
             absolute inset-0 
-            bg-gradient-to-br ${card.borderGradient}
+            bg-linear-to-br ${card.borderGradient}
             opacity-0
             group-hover:opacity-100
-            transition-opacity duration-300
+            transition-opacity duration-500
             pointer-events-none
           `}
           style={{
@@ -189,21 +195,28 @@ export function OverviewCards() {
           }}
           />
 
+          {/* Shine effect on hover */}
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+          </div>
+
           {/* Content */}
           <div className="relative z-10 flex flex-col h-full">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium text-sidebar-foreground/60">
+              <span className="text-xs font-medium text-sidebar-foreground/70 group-hover:text-sidebar-foreground/90 transition-colors">
                 {card.title}
               </span>
-              <card.icon className={`h-4 w-4 ${card.iconColor}`} />
+              <div className={`p-2 rounded-lg bg-linear-to-br ${card.gradient} backdrop-blur-sm border border-white/10 group-hover:scale-110 transition-transform duration-300`}>
+                <card.icon className={`h-4 w-4 ${card.iconColor} drop-shadow-lg`} />
+              </div>
             </div>
             
             <div className="flex-1">
-              <div className={`text-2xl font-bold ${card.iconColor} mb-1`}>
+              <div className={`text-2xl font-bold ${card.iconColor} mb-1 drop-shadow-lg group-hover:scale-105 transition-transform duration-300`}>
                 {card.value}
               </div>
               {card.subtitle && (
-                <div className="text-xs text-sidebar-foreground/50">
+                <div className="text-xs text-sidebar-foreground/60 group-hover:text-sidebar-foreground/80 transition-colors">
                   {card.subtitle}
                 </div>
               )}

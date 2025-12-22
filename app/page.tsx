@@ -1,6 +1,7 @@
 "use client"
 
 import { OverviewCards } from "@/components/overview-cards"
+import { NetworkTrendsChart } from "@/components/network-trends-chart"
 import { useSidebar } from "@/components/ui/sidebar"
 
 export default function Home() { 
@@ -16,7 +17,11 @@ export default function Home() {
     >
       <div>
       </div>
+      
       <OverviewCards />
+
+      {/* Network Trends */}
+      <NetworkTrendsChart />
     </div>
   )
 }
