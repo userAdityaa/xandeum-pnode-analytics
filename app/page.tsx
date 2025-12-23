@@ -4,6 +4,7 @@ import { OverviewCards } from "@/components/overview-cards"
 import { NetworkTrendsChart } from "@/components/network-trends-chart"
 import { VersionDistributionChart, CountryDistributionChart } from "@/components/distribution-charts"
 import { StorageOverviewCard } from "@/components/storage-overview-card"
+import { TopNodesTable } from "@/components/top-nodes-table"
 import { useSidebar } from "@/components/ui/sidebar"
 
 export default function Home() { 
@@ -42,6 +43,9 @@ export default function Home() {
           <StorageOverviewCard />
         </div>
       </div>
+
+      {/* Row 4: Top Nodes Table */}
+      <TopNodesTable />
     </div>
   )
 }

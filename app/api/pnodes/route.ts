@@ -4,6 +4,7 @@ import { callPRPC } from "@/app/lib/prpc/client";
 import { computeNodeHealth } from "@/app/lib/analytics/health";
 import { PNode, PNodesResponse } from "@/app/lib/prpc/types";
 import { syncStorageData, getNodeStorageData, getStorageSyncStats } from "@/app/lib/storage-sync";
+import { getNodeStats, ensureNodeStatsSync } from "@/app/lib/node-stats-sync";
 
 interface GeoLocation {
   country?: string;
@@ -65,7 +66,8 @@ export async function GET() {
         // Sync storage data from get-pods-with-stats
         await syncStorageData();
         
-
+        // Ensure node stats are synced (wait for initial sync)
+        await ensureNodeStatsSync();
         
         const podsResult = await fetchFromAnySeed("get-pods"); 
         const now = Math.floor(Date.now() / 1000);
@@ -120,6 +122,7 @@ export async function GET() {
             
             // Get storage data from storage sync
             const storageData = getNodeStorageData(pod.address);
+            const nodeStats = getNodeStats(pod.address);
 
             return { 
                 id: pod.address, 
@@ -134,6 +137,10 @@ export async function GET() {
                 storageUsed: storageData?.storage_used,
                 storageUsagePercent: storageData?.storage_usage_percent,
                 credits: storageData?.credits,
+                // System metrics from individual node stats (only for public nodes)
+                ramUsedBytes: nodeStats?.ramUsed,
+                ramTotalBytes: nodeStats?.ramTotal,
+                cpuPercent: nodeStats?.cpuPercent,
             }
         });
 
