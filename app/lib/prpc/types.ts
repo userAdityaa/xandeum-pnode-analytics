@@ -25,6 +25,10 @@ export interface PNode {
     storageUsed?: number;
     storageUsagePercent?: number;
     credits?: number; // Credits from podcredits API
+    // Network traffic stats (only for public nodes)
+    packetsReceived?: number;
+    packetsSent?: number;
+    activeStreams?: number;
 }
 
 export interface PNodeSummary { 

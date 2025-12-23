@@ -142,6 +142,10 @@ export async function GET() {
                 ramUsedBytes: nodeStats?.ramUsed,
                 ramTotalBytes: nodeStats?.ramTotal,
                 cpuPercent: nodeStats?.cpuPercent,
+                // Network traffic stats (only for public nodes)
+                packetsReceived: nodeStats?.packetsReceived,
+                packetsSent: nodeStats?.packetsSent,
+                activeStreams: nodeStats?.activeStreams,
             }
         });
 
