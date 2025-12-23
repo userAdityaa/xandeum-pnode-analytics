@@ -3,7 +3,7 @@
 import { OverviewCards } from "@/components/overview-cards"
 import { NetworkTrendsChart } from "@/components/network-trends-chart"
 import { VersionDistributionChart, CountryDistributionChart } from "@/components/distribution-charts"
-// import { StorageOverviewCard } from "@/components/storage-overview-card"
+import { StorageOverviewCard } from "@/components/storage-overview-card"
 import { useSidebar } from "@/components/ui/sidebar"
 
 export default function Home() { 
@@ -39,7 +39,7 @@ export default function Home() {
           <CountryDistributionChart />
         </div>
         <div className="lg:col-span-1">
-          {/* <StorageOverviewCard /> */}
+          <StorageOverviewCard />
         </div>
       </div>
     </div>
