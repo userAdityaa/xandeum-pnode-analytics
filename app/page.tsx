@@ -3,6 +3,7 @@
 import { OverviewCards } from "@/components/overview-cards"
 import { NetworkTrendsChart } from "@/components/network-trends-chart"
 import { VersionDistributionChart, CountryDistributionChart } from "@/components/distribution-charts"
+// import { StorageOverviewCard } from "@/components/storage-overview-card"
 import { useSidebar } from "@/components/ui/sidebar"
 
 export default function Home() { 
@@ -32,13 +33,13 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Row 3: Country Distribution on the right */}
+      {/* Row 3: Country Distribution and Storage Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="lg:col-span-1">
-          {/* Empty space on the left */}
+          <CountryDistributionChart />
         </div>
         <div className="lg:col-span-1">
-          <CountryDistributionChart />
+          {/* <StorageOverviewCard /> */}
         </div>
       </div>
     </div>

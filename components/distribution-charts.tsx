@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react"
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
+import { MapIcon, Globe, ZoomIn, ZoomOut, Maximize2, Activity, HardDrive, Award } from "lucide-react"
+import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from "react-simple-maps"
+import * as Dialog from '@radix-ui/react-dialog'
 
 interface DistributionData {
   versionDistribution: Record<string, number>
@@ -255,6 +258,20 @@ export function CountryDistributionChart() {
   const [cityData, setCityData] = useState<Record<string, Record<string, number>>>({})
   const [loading, setLoading] = useState(true)
   const [selectedCountry, setSelectedCountry] = useState<DistributionItem | null>(null)
+  const [showMapView, setShowMapView] = useState(false)
+  const [allNodes, setAllNodes] = useState<any[]>([])
+  const [mapViewMode, setMapViewMode] = useState<'storage' | 'health' | 'credit'>('storage')
+  const [zoom, setZoom] = useState(1)
+  const [center, setCenter] = useState<[number, number]>([0, 20])
+  const [countryMetrics, setCountryMetrics] = useState<{
+    storage: Record<string, number>,
+    health: Record<string, number>,
+    credit: Record<string, number>
+  }>({
+    storage: {},
+    health: {},
+    credit: {}
+  })
 
   useEffect(() => {
     async function fetchData() {
@@ -262,6 +279,50 @@ export function CountryDistributionChart() {
         const response = await fetch('/api/pnodes', { cache: 'no-store' })
         const result = await response.json()
         setData(result.summary.countryDistribution || {})
+        setAllNodes(result.pNodes || [])
+        
+        // Calculate country-level metrics
+        const storageByCountry: Record<string, number> = {}
+        const healthByCountry: Record<string, { total: number, count: number }> = {}
+        const rewardsByCountry: Record<string, number> = {}
+        
+        if (result.pNodes) {
+          result.pNodes.forEach((node: any) => {
+            const country = node.country || 'Unknown'
+            
+            // Aggregate storage from real node data (if available)
+            let nodeStorageGB = 0
+            if (node.totalBytes && node.totalBytes > 0) {
+              // Convert bytes to GB
+              nodeStorageGB = node.totalBytes / (1024 ** 3)
+            }
+            storageByCountry[country] = (storageByCountry[country] || 0) + nodeStorageGB
+            
+            // Aggregate actual health scores for averaging
+            const nodeHealth = node.healthScore || 0
+            if (!healthByCountry[country]) {
+              healthByCountry[country] = { total: 0, count: 0 }
+            }
+            healthByCountry[country].total += nodeHealth
+            healthByCountry[country].count += 1
+            
+            // Calculate network rewards based on health and activity
+            const nodeReward = node.healthScore >= 80 ? 100 : node.healthScore >= 50 ? 50 : 10
+            rewardsByCountry[country] = (rewardsByCountry[country] || 0) + nodeReward
+          })
+        }
+        
+        // Convert health to averages
+        const avgHealthByCountry: Record<string, number> = {}
+        Object.entries(healthByCountry).forEach(([country, data]) => {
+          avgHealthByCountry[country] = data.total / data.count
+        })
+        
+        setCountryMetrics({
+          storage: storageByCountry,
+          health: avgHealthByCountry,
+          credit: rewardsByCountry
+        })
         
         // Build city data from nodes
         const cityByCountry: Record<string, Record<string, number>> = {}
@@ -334,9 +395,18 @@ export function CountryDistributionChart() {
       }} />
 
       <div className="relative z-10 h-full flex flex-col">
-        <div className="mb-3">
-          <h3 className="text-sm font-semibold text-sidebar-foreground">Country Distribution</h3>
-          <p className="text-[10px] text-sidebar-foreground/50 mt-0.5">{selectedCountry ? 'City breakdown' : `${countryData.length} countries • Click a bar for city details`}</p>
+        <div className="mb-3 flex items-start justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-sidebar-foreground">Country Distribution</h3>
+            <p className="text-[10px] text-sidebar-foreground/50 mt-0.5">{selectedCountry ? 'City breakdown' : `${countryData.length} countries • Click a bar for city details`}</p>
+          </div>
+          <button
+            onClick={() => setShowMapView(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-colors text-[10px] text-sidebar-foreground/80 hover:text-sidebar-foreground font-medium"
+          >
+            <Globe className="w-3 h-3" />
+            View Map
+          </button>
         </div>
 
         {selectedCountry ? (
@@ -447,6 +517,359 @@ export function CountryDistributionChart() {
         </div>
         )}
       </div>
+      
+      {/* Map View Dialog */}
+      <Dialog.Root open={showMapView} onOpenChange={setShowMapView}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/20 backdrop-blur-2xl z-50 animate-in fade-in" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[95vw] max-w-6xl max-h-[90vh] overflow-hidden rounded-lg bg-sidebar/95 backdrop-blur-xl border-2 border-white/10 shadow-2xl animate-in fade-in zoom-in-95">
+            {/* Header */}
+            <div className="p-6 border-b border-white/10 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Dialog.Title className="text-lg font-semibold text-sidebar-foreground flex items-center gap-2">
+                    Global Node Distribution
+                  </Dialog.Title>
+                  <Dialog.Description className="text-xs text-sidebar-foreground/60 mt-1">
+                    Geographic distribution of {allNodes.length} nodes across {Object.keys(data).length} countries
+                  </Dialog.Description>
+                </div>
+                <Dialog.Close className="rounded-lg p-2 hover:bg-white/10 transition-colors">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </Dialog.Close>
+              </div>
+              
+              {/* View Mode Tabs */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setMapViewMode('storage')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    mapViewMode === 'storage'
+                      ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                      : 'bg-white/5 text-sidebar-foreground/60 hover:bg-white/10 border border-white/10'
+                  }`}
+                >
+                  <HardDrive className="w-3.5 h-3.5" />
+                  Storage
+                </button>
+                <button
+                  onClick={() => setMapViewMode('health')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    mapViewMode === 'health'
+                      ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                      : 'bg-white/5 text-sidebar-foreground/60 hover:bg-white/10 border border-white/10'
+                  }`}
+                >
+                  <Activity className="w-3.5 h-3.5" />
+                  Health
+                </button>
+                <button
+                  onClick={() => setMapViewMode('credit')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    mapViewMode === 'credit'
+                      ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                      : 'bg-white/5 text-sidebar-foreground/60 hover:bg-white/10 border border-white/10'
+                  }`}
+                >
+                  <Award className="w-3.5 h-3.5" />
+                  Credit
+                </button>
+                
+                {/* Zoom Controls */}
+                <div className="flex items-center gap-1 ml-auto">
+                  <button
+                    onClick={() => setZoom(Math.max(1, zoom - 0.5))}
+                    disabled={zoom <= 1}
+                    className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <ZoomOut className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setZoom(Math.min(4, zoom + 0.5))}
+                    disabled={zoom >= 4}
+                    className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <ZoomIn className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => { setZoom(1); setCenter([0, 20]) }}
+                    className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
+                  >
+                    <Maximize2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            {/* Map Content */}
+            <div className="p-6 max-h-[calc(90vh-200px)] overflow-y-auto scrollbar-none">
+              <div className="bg-sidebar/40 rounded-xl border border-white/10 p-4">
+                <ComposableMap
+                  projection="geoMercator"
+                  className="w-full h-[500px]"
+                >
+                  <ZoomableGroup
+                    zoom={zoom}
+                    center={center}
+                    onMoveEnd={(position) => {
+                      setCenter(position.coordinates)
+                      setZoom(position.zoom)
+                    }}
+                    maxZoom={8}
+                    minZoom={1}
+                  >
+                  <Geographies geography="https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json">
+                    {({ geographies }) => {
+                      // Calculate max node count for color scaling
+                      const maxNodeCount = Math.max(...Object.values(data), 1)
+                      
+                      return geographies.map((geo) => {
+                        const countryName = geo.properties.name
+                        const nodeCount = data[countryName] || 0
+                        const hasNodes = nodeCount > 0
+                        const intensity = nodeCount / maxNodeCount
+                        
+                        // Color gradient based on view mode
+                        let fillColor = "rgba(255, 255, 255, 0.03)"
+                        let hoverColor = "rgba(255, 255, 255, 0.08)"
+                        
+                        if (hasNodes) {
+                          if (mapViewMode === 'storage') {
+                            // Red → Yellow → Green gradient (heatmap)
+                            if (intensity > 0.7) {
+                              fillColor = `rgba(239, 68, 68, ${0.4 + intensity * 0.5})` // Red (high)
+                              hoverColor = 'rgba(239, 68, 68, 0.95)'
+                            } else if (intensity > 0.4) {
+                              fillColor = `rgba(251, 191, 36, ${0.4 + intensity * 0.5})` // Yellow (medium)
+                              hoverColor = 'rgba(251, 191, 36, 0.95)'
+                            } else {
+                              fillColor = `rgba(34, 197, 94, ${0.3 + intensity * 0.5})` // Green (low)
+                              hoverColor = 'rgba(34, 197, 94, 0.85)'
+                            }
+                          } else if (mapViewMode === 'health') {
+                            // Green → Yellow → Red gradient (health indicator)
+                            if (intensity > 0.7) {
+                              fillColor = `rgba(34, 197, 94, ${0.4 + intensity * 0.5})` // Green (healthy)
+                              hoverColor = 'rgba(34, 197, 94, 0.95)'
+                            } else if (intensity > 0.4) {
+                              fillColor = `rgba(251, 191, 36, ${0.4 + intensity * 0.5})` // Yellow (degraded)
+                              hoverColor = 'rgba(251, 191, 36, 0.95)'
+                            } else {
+                              fillColor = `rgba(239, 68, 68, ${0.3 + intensity * 0.5})` // Red (unhealthy)
+                              hoverColor = 'rgba(239, 68, 68, 0.85)'
+                            }
+                          } else if (mapViewMode === 'credit') {
+                            // Purple → Pink → Blue gradient
+                            if (intensity > 0.7) {
+                              fillColor = `rgba(147, 51, 234, ${0.4 + intensity * 0.5})` // Purple (high)
+                              hoverColor = 'rgba(147, 51, 234, 0.95)'
+                            } else if (intensity > 0.4) {
+                              fillColor = `rgba(236, 72, 153, ${0.4 + intensity * 0.5})` // Pink (medium)
+                              hoverColor = 'rgba(236, 72, 153, 0.95)'
+                            } else {
+                              fillColor = `rgba(59, 130, 246, ${0.3 + intensity * 0.5})` // Blue (low)
+                              hoverColor = 'rgba(59, 130, 246, 0.85)'
+                            }
+                          }
+                        }
+                        
+                        return (
+                          <Geography
+                            key={geo.rsmKey}
+                            geography={geo}
+                            fill={fillColor}
+                            stroke="rgba(255, 255, 255, 0.15)"
+                            strokeWidth={0.5}
+                            style={{
+                              default: { outline: "none" },
+                              hover: { 
+                                fill: hasNodes ? hoverColor : "rgba(255, 255, 255, 0.08)",
+                                outline: "none",
+                                cursor: hasNodes ? "pointer" : "default"
+                              },
+                              pressed: { outline: "none" }
+                            }}
+                          />
+                        )
+                      })
+                    }}
+                  </Geographies>
+                  
+                  {/* Markers for countries with nodes */}
+                  {allNodes
+                    .filter(node => node.latitude && node.longitude)
+                    .map((node, index) => {
+                      // Get country node count for color intensity
+                      const countryNodeCount = data[node.country] || 0
+                      const maxNodeCount = Math.max(...Object.values(data), 1)
+                      const intensity = countryNodeCount / maxNodeCount
+                      
+                      let markerColor = 'rgba(34, 197, 94, 0.8)' // Default green
+                      
+                      if (mapViewMode === 'storage') {
+                        if (intensity > 0.7) {
+                          markerColor = 'rgba(239, 68, 68, 0.9)' // Red
+                        } else if (intensity > 0.4) {
+                          markerColor = 'rgba(251, 191, 36, 0.9)' // Yellow
+                        } else {
+                          markerColor = 'rgba(34, 197, 94, 0.8)' // Green
+                        }
+                      } else if (mapViewMode === 'health') {
+                        if (intensity > 0.7) {
+                          markerColor = 'rgba(34, 197, 94, 0.9)' // Green
+                        } else if (intensity > 0.4) {
+                          markerColor = 'rgba(251, 191, 36, 0.9)' // Yellow
+                        } else {
+                          markerColor = 'rgba(239, 68, 68, 0.8)' // Red
+                        }
+                      } else if (mapViewMode === 'credit') {
+                        if (intensity > 0.7) {
+                          markerColor = 'rgba(147, 51, 234, 0.9)' // Purple
+                        } else if (intensity > 0.4) {
+                          markerColor = 'rgba(236, 72, 153, 0.9)' // Pink
+                        } else {
+                          markerColor = 'rgba(59, 130, 246, 0.8)' // Blue
+                        }
+                      }
+                      
+                      return (
+                        <Marker key={index} coordinates={[node.longitude, node.latitude]}>
+                          <circle
+                            r={2 / zoom}
+                            fill={markerColor}
+                            stroke="rgba(255, 255, 255, 0.8)"
+                            strokeWidth={0.5 / zoom}
+                            className="animate-pulse"
+                          />
+                        </Marker>
+                      )
+                    })}
+                  </ZoomableGroup>
+                </ComposableMap>
+              </div>
+              
+              {/* Statistics Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                {(() => {
+                  // Get data based on mode
+                  let modeData: Record<string, number> = {}
+                  let label = 'Nodes'
+                  let unit = ''
+                  
+                  if (mapViewMode === 'storage') {
+                    modeData = countryMetrics.storage
+                    label = 'Storage'
+                    unit = ' GB'
+                  } else if (mapViewMode === 'health') {
+                    modeData = countryMetrics.health
+                    label = 'Avg Health'
+                    unit = '/100'
+                  } else if (mapViewMode === 'credit') {
+                    modeData = countryMetrics.credit
+                    label = 'Network Rewards'
+                    unit = ' pts'
+                  }
+                  
+                  return Object.entries(modeData)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 8)
+                    .map(([country, metricValue], index) => {
+                      const maxValue = Math.max(...Object.values(modeData), 1)
+                      const intensity = metricValue / maxValue
+                      
+                      // For health mode, use absolute health score (0-100)
+                      // For other modes, use relative intensity
+                      const colorIntensity = mapViewMode === 'health' ? metricValue / 100 : intensity
+                      
+                      // Determine color based on mode and intensity
+                      let bgColor = 'rgba(34, 197, 94, 0.15)'
+                      let borderColor = 'rgba(34, 197, 94, 0.3)'
+                      let dotColor = 'rgba(34, 197, 94, 0.8)'
+                      
+                      if (mapViewMode === 'storage') {
+                        if (intensity > 0.7) {
+                          bgColor = 'rgba(239, 68, 68, 0.15)'
+                          borderColor = 'rgba(239, 68, 68, 0.3)'
+                          dotColor = 'rgba(239, 68, 68, 0.8)'
+                        } else if (intensity > 0.4) {
+                          bgColor = 'rgba(251, 191, 36, 0.15)'
+                          borderColor = 'rgba(251, 191, 36, 0.3)'
+                          dotColor = 'rgba(251, 191, 36, 0.8)'
+                        }
+                      } else if (mapViewMode === 'health') {
+                        // Use actual health score for coloring
+                        if (colorIntensity >= 0.8) {
+                          bgColor = 'rgba(34, 197, 94, 0.15)'
+                          borderColor = 'rgba(34, 197, 94, 0.3)'
+                          dotColor = 'rgba(34, 197, 94, 0.8)'
+                        } else if (colorIntensity >= 0.5) {
+                          bgColor = 'rgba(251, 191, 36, 0.15)'
+                          borderColor = 'rgba(251, 191, 36, 0.3)'
+                          dotColor = 'rgba(251, 191, 36, 0.8)'
+                        } else {
+                          bgColor = 'rgba(239, 68, 68, 0.15)'
+                          borderColor = 'rgba(239, 68, 68, 0.3)'
+                          dotColor = 'rgba(239, 68, 68, 0.8)'
+                        }
+                      } else if (mapViewMode === 'credit') {
+                        if (intensity > 0.7) {
+                          bgColor = 'rgba(147, 51, 234, 0.15)'
+                          borderColor = 'rgba(147, 51, 234, 0.3)'
+                          dotColor = 'rgba(147, 51, 234, 0.8)'
+                        } else if (intensity > 0.4) {
+                          bgColor = 'rgba(236, 72, 153, 0.15)'
+                          borderColor = 'rgba(236, 72, 153, 0.3)'
+                          dotColor = 'rgba(236, 72, 153, 0.8)'
+                        } else {
+                          bgColor = 'rgba(59, 130, 246, 0.15)'
+                          borderColor = 'rgba(59, 130, 246, 0.3)'
+                          dotColor = 'rgba(59, 130, 246, 0.8)'
+                        }
+                      }
+                      
+                      // Format value based on mode
+                      let displayValue = metricValue.toFixed(0)
+                      if (mapViewMode === 'storage') {
+                        displayValue = metricValue.toFixed(1)
+                      }
+                      
+                      return (
+                        <div
+                          key={country}
+                          className="backdrop-blur-xl rounded-lg p-3 transition-all"
+                          style={{
+                            backgroundColor: bgColor,
+                            borderWidth: '1px',
+                            borderStyle: 'solid',
+                            borderColor: borderColor
+                          }}
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            <div 
+                              className="w-2 h-2 rounded-full animate-pulse"
+                              style={{ backgroundColor: dotColor }}
+                            />
+                            <span className="text-xs font-medium text-sidebar-foreground truncate">
+                              {country}
+                            </span>
+                          </div>
+                          <div className="text-lg font-bold text-sidebar-foreground">
+                            {displayValue}{unit}
+                          </div>
+                          <div className="text-[10px] text-sidebar-foreground/60">
+                            {label}
+                          </div>
+                        </div>
+                      )
+                    })
+                })()}
+              </div>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   )
 }

@@ -28,18 +28,10 @@ const navigation = [
 ]
 
 const pNodesSection = {
-  title: "pNodes",
+  title: "Analysis",
   items: [
-    { title: "Network", icon: Network, href: "/network" },
-    { title: "Nodes", icon: Box, href: "/nodes" },
-  ],
-}
-
-const tradingSection = {
-  title: "Trading",
-  items: [
-    { title: "Trade XAND", icon: TrendingUp, href: "/trade" },
-    { title: "Stake SOL", icon: Link2, href: "/stake" },
+    { title: "pNodes", icon: Network, href: "/pnodes" },
+    { title: "Storage", icon: Box, href: "/storage" },
   ],
 }
 
@@ -112,24 +104,6 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {pNodesSection.items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title}>
-                    <a href={item.href}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>{tradingSection.title}</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {tradingSection.items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild tooltip={item.title}>
                     <a href={item.href}>
