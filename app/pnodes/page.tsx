@@ -327,7 +327,7 @@ export default function PNodesPage() {
             </thead>
             <tbody>
               {paginatedNodes.map((node) => (
-                <tr key={node.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                <tr key={node.id} className="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer" onClick={() => window.location.href = `/pnodes/${node.id.split(':')[0]}`}>
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">
                       <div className={`w-2 h-2 rounded-full ${node.isPublic ? 'bg-green-500' : 'bg-yellow-500'}`} />

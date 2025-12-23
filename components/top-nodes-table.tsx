@@ -204,7 +204,7 @@ export function TopNodesTable() {
             </thead>
             <tbody>
               {topNodes.map((node, index) => (
-                <tr key={node.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                <tr key={node.id} className="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer" onClick={() => window.location.href = `/pnodes/${node.id.split(':')[0]}`}>
                   <td className="py-3 px-2 text-xs text-sidebar-foreground/60">{index + 1}</td>
                   <td className="py-3 px-2 text-sm font-semibold text-sidebar-foreground">
                     {sortMode === 'credits' && (node.credits?.toLocaleString() || '0')}

@@ -107,7 +107,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {pNodesSection.items.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.title}>
+                  <SidebarMenuButton asChild isActive={pathname === item.href || pathname?.startsWith(item.href + '/')} tooltip={item.title}>
                     <a href={item.href}>
                       <item.icon />
                       <span>{item.title}</span>
