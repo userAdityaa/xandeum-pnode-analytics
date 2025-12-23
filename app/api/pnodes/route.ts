@@ -137,6 +137,7 @@ export async function GET() {
                 storageUsed: storageData?.storage_used,
                 storageUsagePercent: storageData?.storage_usage_percent,
                 credits: storageData?.credits,
+                uptimeSeconds: storageData?.uptime,
                 // System metrics from individual node stats (only for public nodes)
                 ramUsedBytes: nodeStats?.ramUsed,
                 ramTotalBytes: nodeStats?.ramTotal,

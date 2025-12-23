@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Trophy, HardDrive, Activity, TrendingUp } from "lucide-react"
+import Link from "next/link"
 
 type SortMode = 'credits' | 'storage' | 'health'
 
@@ -143,10 +144,10 @@ export function TopNodesTable() {
               </p>
             </div>
           </div>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-colors text-xs text-sidebar-foreground/80 hover:text-sidebar-foreground font-medium">
+          <Link href="/pnodes" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-colors text-xs text-sidebar-foreground/80 hover:text-sidebar-foreground font-medium">
             <TrendingUp className="w-3.5 h-3.5" />
             View All
-          </button>
+          </Link>
         </div>
 
         {/* Sort Mode Tabs */}

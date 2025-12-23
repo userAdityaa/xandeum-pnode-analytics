@@ -18,6 +18,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { usePathname } from "next/navigation"
 
 const navigation = [
   {
@@ -51,6 +52,7 @@ const settingsSection = {
 
 export function AppSidebar() {
   const { toggleSidebar, state } = useSidebar()
+  const pathname = usePathname()
   
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border mt-14">
@@ -87,7 +89,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {navigation.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive tooltip={item.title}>
+                  <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.title}>
                     <a href={item.href}>
                       <item.icon />
                       <span>{item.title}</span>
@@ -105,7 +107,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {pNodesSection.items.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title}>
+                  <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.title}>
                     <a href={item.href}>
                       <item.icon />
                       <span>{item.title}</span>
