@@ -12,10 +12,20 @@ export interface PodStorageData {
   storage_used: number;
   uptime: number;
   version: string;
+  credits?: number; // Credits from podcredits API
 }
 
 interface PodsWithStatsResponse {
   pods: PodStorageData[];
+}
+
+interface PodCredit {
+  pod_id: string;
+  credits: number;
+}
+
+interface PodsCreditsResponse {
+  pods_credits: PodCredit[];
 }
 
 // In-memory cache for pod storage data
@@ -42,11 +52,30 @@ export async function syncStorageData(): Promise<void> {
       throw new Error("Invalid response from get-pods-with-stats");
     }
 
+    // Fetch credits data
+    let creditsMap = new Map<string, number>();
+    try {
+      const creditsResponse = await fetch('https://podcredits.xandeum.network/api/pods-credits');
+      const creditsData: PodsCreditsResponse = await creditsResponse.json();
+      
+      for (const credit of creditsData.pods_credits) {
+        creditsMap.set(credit.pod_id, credit.credits);
+      }
+      console.log(`[StorageSync] Fetched credits for ${creditsMap.size} pods`);
+    } catch (error: any) {
+      console.error('[StorageSync] Failed to fetch credits:', error.message);
+    }
+
     // Clear old cache and update with fresh data
     storageCache.clear();
     
     for (const pod of result.pods) {
-      storageCache.set(pod.address, pod);
+      // Attach credits to pod data using pubkey as pod_id
+      const podWithCredits = {
+        ...pod,
+        credits: creditsMap.get(pod.pubkey) || 0,
+      };
+      storageCache.set(pod.address, podWithCredits);
     }
     
     lastSyncTimestamp = Math.floor(Date.now() / 1000);

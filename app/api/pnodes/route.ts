@@ -21,30 +21,29 @@ async function getGeolocation(ip: string): Promise<GeoLocation> {
   }
 
   try {
-    // Using ip-api.com free tier (45 requests/minute)
-    const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,city,lat,lon`, {
-      signal: AbortSignal.timeout(3000) // Increased timeout to 3 seconds
+    // Using ipwhois.app - free unlimited API (faster, no strict rate limits)
+    const response = await fetch(`http://ipwho.is/${ip}`, {
+      signal: AbortSignal.timeout(2000)
     });
     
     if (!response.ok) {
-      throw new Error('Geolocation API failed');
+      return {};
     }
     
     const data = await response.json();
     
-    if (data.status === 'success') {
+    if (data.success !== false) {
       const geo = {
         country: data.country,
         city: data.city,
-        latitude: data.lat,
-        longitude: data.lon
+        latitude: data.latitude,
+        longitude: data.longitude
       };
       geoCache.set(ip, geo);
       return geo;
     }
   } catch (error) {
     // Silently fail for geolocation - it's not critical
-    // Suppress all errors (timeouts, connection resets, rate limits, etc.)
   }
   
   return {};
@@ -80,27 +79,28 @@ export async function GET() {
 
         const latestVersion = Object.entries(versionCount).sort((a, b) => b[1] - a[1])[0]?.[0];
 
-        // Fetch geolocation data only (stats come from cache)
-        const batchSize = 10;
-        const geoData: GeoLocation[] = new Array(rawNodes.length).fill({});
+        // Fetch geolocation data in parallel with increased batch size
+        const batchSize = 20; // Faster API allows larger batches
+        const geoData: GeoLocation[] = rawNodes.map(() => ({}));
         
-        // Process in batches to avoid overwhelming the API
-        const fetchWithTimeout = async () => {
-          for (let i = 0; i < rawNodes.length; i += batchSize) {
-            const batch = rawNodes.slice(i, i + batchSize);
-            const batchPromises = batch.map(async (pod: any, batchIndex: number) => {
+        // Process all batches in parallel for maximum speed
+        const allBatchPromises = [];
+        for (let i = 0; i < rawNodes.length; i += batchSize) {
+          const batch = rawNodes.slice(i, i + batchSize);
+          const batchPromise = Promise.all(
+            batch.map(async (pod: any, batchIndex: number) => {
               const ip = pod.address.split(':')[0];
               const geo = await getGeolocation(ip);
               geoData[i + batchIndex] = geo;
-            });
-            await Promise.all(batchPromises);
-          }
-        };
+            })
+          );
+          allBatchPromises.push(batchPromise);
+        }
         
-        // Race between fetching data and a 3-second timeout
+        // Wait for all geolocation fetches to complete (with 10s max timeout)
         await Promise.race([
-          fetchWithTimeout(),
-          new Promise(resolve => setTimeout(resolve, 3000))
+          Promise.all(allBatchPromises),
+          new Promise(resolve => setTimeout(resolve, 10000))
         ]);
         
         const pNodes: PNode[] = rawNodes.map((pod: any, index: number) => { 
@@ -117,10 +117,6 @@ export async function GET() {
             const flags: string[] = []; 
             if(status === "inactive") flags.push("offline"); 
             if(pod.version !== latestVersion) flags.push("outdated");
-
-            // Get cached stats from background sync
-            // const cachedStats = getNodeStats(pod.address);
-            // const hasRealData = cachedStats?.hasRealData || false;
             
             // Get storage data from storage sync
             const storageData = getNodeStorageData(pod.address);
@@ -133,18 +129,11 @@ export async function GET() {
                 healthScore, 
                 flags,
                 ...geoData[index],
-                // fileSizeBytes: cachedStats?.fileSizeBytes,
-                // totalBytes: cachedStats?.totalBytes,
-                // ramUsedBytes: cachedStats?.ramUsedBytes,
-                // ramTotalBytes: cachedStats?.ramTotalBytes,
-                // cpuPercent: cachedStats?.cpuPercent,
-                // uptimeSeconds: cachedStats?.uptimeSeconds,
-                // hasRealData
-                // Storage data
                 isPublic: storageData?.is_public,
                 storageCommitted: storageData?.storage_committed,
                 storageUsed: storageData?.storage_used,
                 storageUsagePercent: storageData?.storage_usage_percent,
+                credits: storageData?.credits,
             }
         });
 
@@ -181,10 +170,6 @@ export async function GET() {
           console.error('[API/pnodes] Failed to fetch network storage from /api/stats:', error);
         }
 
-        // Get sync statistics
-        // const syncStats = getSyncStats();
-        // console.log('[API] Sync stats:', JSON.stringify(syncStats, null, 2));
-
         const response: PNodesResponse = { 
           summary: { 
             totalKnown: podsResult.total_count, 
@@ -198,12 +183,9 @@ export async function GET() {
             privateNodes: storageStats.privateNodes,
             networkStorageTotal,
             aggregateStorageUsed,
-            // syncStats
           }, 
           pNodes,
         };
-        
-        // console.log('[API] Response syncStats:', JSON.stringify(response.summary.syncStats));
 
         return NextResponse.json(response);
     } catch (error: any) { 

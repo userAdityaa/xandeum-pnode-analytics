@@ -105,13 +105,13 @@ export function VersionDistributionChart() {
       }}
     >
       {/* Top highlight edge */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+      <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-white/40 to-transparent" />
       
       {/* Bottom shadow edge */}
-      <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-t from-black/30 to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 h-2 bg-linear-to-t from-black/30 to-transparent" />
       
       {/* 3D depth layer */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-black/30" />
+      <div className="absolute inset-0 bg-linear-to-b from-white/10 via-transparent to-black/30" />
       
       {/* Glass reflection effect */}
       <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -284,19 +284,18 @@ export function CountryDistributionChart() {
         // Calculate country-level metrics
         const storageByCountry: Record<string, number> = {}
         const healthByCountry: Record<string, { total: number, count: number }> = {}
-        const rewardsByCountry: Record<string, number> = {}
+        const creditsByCountry: Record<string, number> = {}
         
         if (result.pNodes) {
           result.pNodes.forEach((node: any) => {
             const country = node.country || 'Unknown'
             
-            // Aggregate storage from real node data (if available)
-            let nodeStorageGB = 0
-            if (node.totalBytes && node.totalBytes > 0) {
-              // Convert bytes to GB
-              nodeStorageGB = node.totalBytes / (1024 ** 3)
+            // Aggregate storage from real node data - use storageUsed from get-pods-with-stats
+            let nodeStorageBytes = 0
+            if (node.storageUsed && node.storageUsed > 0) {
+              nodeStorageBytes = node.storageUsed
             }
-            storageByCountry[country] = (storageByCountry[country] || 0) + nodeStorageGB
+            storageByCountry[country] = (storageByCountry[country] || 0) + nodeStorageBytes
             
             // Aggregate actual health scores for averaging
             const nodeHealth = node.healthScore || 0
@@ -306,9 +305,9 @@ export function CountryDistributionChart() {
             healthByCountry[country].total += nodeHealth
             healthByCountry[country].count += 1
             
-            // Calculate network rewards based on health and activity
-            const nodeReward = node.healthScore >= 80 ? 100 : node.healthScore >= 50 ? 50 : 10
-            rewardsByCountry[country] = (rewardsByCountry[country] || 0) + nodeReward
+            // Aggregate actual credits from podcredits API
+            const nodeCredits = node.credits || 0
+            creditsByCountry[country] = (creditsByCountry[country] || 0) + nodeCredits
           })
         }
         
@@ -321,7 +320,7 @@ export function CountryDistributionChart() {
         setCountryMetrics({
           storage: storageByCountry,
           health: avgHealthByCountry,
-          credit: rewardsByCountry
+          credit: creditsByCountry
         })
         
         // Build city data from nodes
@@ -375,13 +374,13 @@ export function CountryDistributionChart() {
       }}
     >
       {/* Top highlight edge */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+      <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-white/40 to-transparent" />
       
       {/* Bottom shadow edge */}
-      <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-t from-black/30 to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 h-2 bg-linear-to-t from-black/30 to-transparent" />
       
       {/* 3D depth layer */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-black/30" />
+      <div className="absolute inset-0 bg-linear-to-b from-white/10 via-transparent to-black/30" />
       
       {/* Glass reflection effect */}
       <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -468,7 +467,7 @@ export function CountryDistributionChart() {
         ) : (
           <div className="flex-1 space-y-1.5 overflow-hidden">
           {countryData.length > 0 ? (
-            countryData.map((item, index) => {
+            countryData.map((item: DistributionItem, index: number) => {
               const percentage = totalCountries > 0 ? (item.value / totalCountries) * 100 : 0
               const maxValue = countryData[0]?.value || 1
               const widthPercentage = (item.value / maxValue) * 100
@@ -608,7 +607,7 @@ export function CountryDistributionChart() {
               <div className="bg-sidebar/40 rounded-xl border border-white/10 p-4">
                 <ComposableMap
                   projection="geoMercator"
-                  className="w-full h-[500px]"
+                  className="w-full h-125"
                 >
                   <ZoomableGroup
                     zoom={zoom}
@@ -753,23 +752,32 @@ export function CountryDistributionChart() {
               {/* Statistics Grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
                 {(() => {
+                  // Helper function to format bytes
+                  const formatBytes = (bytes: number) => {
+                    if (bytes === 0) return '0 B'
+                    const k = 1024
+                    const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+                    const i = Math.floor(Math.log(bytes) / Math.log(k))
+                    return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`
+                  }
+                  
                   // Get data based on mode
                   let modeData: Record<string, number> = {}
                   let label = 'Nodes'
-                  let unit = ''
+                  let formatValue = (val: number) => val.toFixed(0)
                   
                   if (mapViewMode === 'storage') {
                     modeData = countryMetrics.storage
-                    label = 'Storage'
-                    unit = ' GB'
+                    label = 'Storage Used'
+                    formatValue = (val: number) => formatBytes(val)
                   } else if (mapViewMode === 'health') {
                     modeData = countryMetrics.health
                     label = 'Avg Health'
-                    unit = '/100'
+                    formatValue = (val: number) => val.toFixed(0)
                   } else if (mapViewMode === 'credit') {
                     modeData = countryMetrics.credit
-                    label = 'Network Rewards'
-                    unit = ' pts'
+                    label = 'Total Credits'
+                    formatValue = (val: number) => val.toFixed(0)
                   }
                   
                   return Object.entries(modeData)
@@ -830,10 +838,7 @@ export function CountryDistributionChart() {
                       }
                       
                       // Format value based on mode
-                      let displayValue = metricValue.toFixed(0)
-                      if (mapViewMode === 'storage') {
-                        displayValue = metricValue.toFixed(1)
-                      }
+                      const displayValue = formatValue(metricValue)
                       
                       return (
                         <div
@@ -856,7 +861,7 @@ export function CountryDistributionChart() {
                             </span>
                           </div>
                           <div className="text-lg font-bold text-sidebar-foreground">
-                            {displayValue}{unit}
+                            {displayValue}
                           </div>
                           <div className="text-[10px] text-sidebar-foreground/60">
                             {label}

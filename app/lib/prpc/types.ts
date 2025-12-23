@@ -24,6 +24,7 @@ export interface PNode {
     storageCommitted?: number;
     storageUsed?: number;
     storageUsagePercent?: number;
+    credits?: number; // Credits from podcredits API
 }
 
 export interface PNodeSummary { 
