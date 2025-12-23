@@ -3,6 +3,7 @@ import { SEEDS,  ACTIVE_THRESHOLD_SECONDS } from "@/app/lib/prpc/constants";
 import { callPRPC } from "@/app/lib/prpc/client";
 import { computeNodeHealth } from "@/app/lib/analytics/health";
 import { PNode, PNodesResponse } from "@/app/lib/prpc/types";
+import { syncStorageData, getNodeStorageData, getStorageSyncStats } from "@/app/lib/storage-sync";
 
 interface GeoLocation {
   country?: string;
@@ -22,7 +23,7 @@ async function getGeolocation(ip: string): Promise<GeoLocation> {
   try {
     // Using ip-api.com free tier (45 requests/minute)
     const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,city,lat,lon`, {
-      signal: AbortSignal.timeout(2000)
+      signal: AbortSignal.timeout(3000) // Increased timeout to 3 seconds
     });
     
     if (!response.ok) {
@@ -43,10 +44,7 @@ async function getGeolocation(ip: string): Promise<GeoLocation> {
     }
   } catch (error) {
     // Silently fail for geolocation - it's not critical
-    // Only log if it's not a timeout error to reduce noise
-    if (!(error instanceof Error && error.name === 'TimeoutError')) {
-      console.error(`Failed to fetch geolocation for ${ip}:`, error);
-    }
+    // Suppress all errors (timeouts, connection resets, rate limits, etc.)
   }
   
   return {};
@@ -65,6 +63,11 @@ async function fetchFromAnySeed(method: string) {
 
 export async function GET() { 
     try { 
+        // Sync storage data from get-pods-with-stats
+        await syncStorageData();
+        
+
+        
         const podsResult = await fetchFromAnySeed("get-pods"); 
         const now = Math.floor(Date.now() / 1000);
 
@@ -77,7 +80,7 @@ export async function GET() {
 
         const latestVersion = Object.entries(versionCount).sort((a, b) => b[1] - a[1])[0]?.[0];
 
-        // Fetch geolocation with concurrency limit and timeout
+        // Fetch geolocation data only (stats come from cache)
         const batchSize = 10;
         const geoData: GeoLocation[] = new Array(rawNodes.length).fill({});
         
@@ -94,7 +97,7 @@ export async function GET() {
           }
         };
         
-        // Race between fetching geo data and a 3-second timeout
+        // Race between fetching data and a 3-second timeout
         await Promise.race([
           fetchWithTimeout(),
           new Promise(resolve => setTimeout(resolve, 3000))
@@ -115,6 +118,13 @@ export async function GET() {
             if(status === "inactive") flags.push("offline"); 
             if(pod.version !== latestVersion) flags.push("outdated");
 
+            // Get cached stats from background sync
+            // const cachedStats = getNodeStats(pod.address);
+            // const hasRealData = cachedStats?.hasRealData || false;
+            
+            // Get storage data from storage sync
+            const storageData = getNodeStorageData(pod.address);
+
             return { 
                 id: pod.address, 
                 version: pod.version,
@@ -122,7 +132,19 @@ export async function GET() {
                 status, 
                 healthScore, 
                 flags,
-                ...geoData[index]
+                ...geoData[index],
+                // fileSizeBytes: cachedStats?.fileSizeBytes,
+                // totalBytes: cachedStats?.totalBytes,
+                // ramUsedBytes: cachedStats?.ramUsedBytes,
+                // ramTotalBytes: cachedStats?.ramTotalBytes,
+                // cpuPercent: cachedStats?.cpuPercent,
+                // uptimeSeconds: cachedStats?.uptimeSeconds,
+                // hasRealData
+                // Storage data
+                isPublic: storageData?.is_public,
+                storageCommitted: storageData?.storage_committed,
+                storageUsed: storageData?.storage_used,
+                storageUsagePercent: storageData?.storage_usage_percent,
             }
         });
 
@@ -139,6 +161,30 @@ export async function GET() {
           }
         }
 
+        // Get storage sync statistics
+        const storageStats = getStorageSyncStats();
+        
+        // Calculate aggregate storage used for active nodes only
+        const aggregateStorageUsed = pNodes
+          .filter(p => p.status === "active" && p.storageUsed)
+          .reduce((sum, p) => sum + (p.storageUsed || 0), 0);
+        
+        // Fetch network storage total from /api/stats
+        let networkStorageTotal = 0;
+        try {
+          const statsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/stats`);
+          if (statsResponse.ok) {
+            const statsData = await statsResponse.json();
+            networkStorageTotal = statsData.storage?.fileSizeBytes || 0;
+          }
+        } catch (error) {
+          console.error('[API/pnodes] Failed to fetch network storage from /api/stats:', error);
+        }
+
+        // Get sync statistics
+        // const syncStats = getSyncStats();
+        // console.log('[API] Sync stats:', JSON.stringify(syncStats, null, 2));
+
         const response: PNodesResponse = { 
           summary: { 
             totalKnown: podsResult.total_count, 
@@ -148,9 +194,16 @@ export async function GET() {
             lastUpdated: now, 
             versionDistribution: versionCount,
             countryDistribution: countryCount,
+            publicNodes: storageStats.publicNodes,
+            privateNodes: storageStats.privateNodes,
+            networkStorageTotal,
+            aggregateStorageUsed,
+            // syncStats
           }, 
           pNodes,
         };
+        
+        // console.log('[API] Response syncStats:', JSON.stringify(response.summary.syncStats));
 
         return NextResponse.json(response);
     } catch (error: any) { 
