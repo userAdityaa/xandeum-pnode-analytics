@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Activity, AlertTriangle, Server, ServerOff, PackageX } from "lucide-react"
+import { useRefresh } from "@/lib/refresh-context"
 
 interface HealthData {
   networkSummary: {
@@ -29,6 +30,7 @@ export function OverviewCards() {
   const [healthData, setHealthData] = useState<HealthData | null>(null)
   const [riskData, setRiskData] = useState<RiskData | null>(null)
   const [loading, setLoading] = useState(true)
+  const { refreshTrigger } = useRefresh()
 
   useEffect(() => {
     async function fetchData() {
@@ -51,10 +53,7 @@ export function OverviewCards() {
     }
 
     fetchData()
-    const interval = setInterval(fetchData, 30000) // Refresh every 30s
-    
-    return () => clearInterval(interval)
-  }, [])
+  }, [refreshTrigger])
 
   if (loading) {
     return (

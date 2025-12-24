@@ -5,23 +5,10 @@ import { Search, Download, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { useRefresh } from "@/lib/refresh-context"
 
 export function Navbar() {
-  const [timeUntilRefresh, setTimeUntilRefresh] = useState(30)
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTimeUntilRefresh((prev) => {
-        if (prev <= 1) {
-          // Reset to 30 when it reaches 0
-          return 30
-        }
-        return prev - 1
-      })
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [])
+  const { timeUntilRefresh } = useRefresh()
 
   return (
     <header className="sticky top-0 z-50 flex h-14 items-center gap-4 border-b border-sidebar-border bg-sidebar px-4">      
