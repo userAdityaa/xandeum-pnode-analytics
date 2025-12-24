@@ -5,6 +5,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Navbar } from "@/components/navbar";
 import { RefreshProvider } from "@/lib/refresh-context";
+import { HealthSyncInitializer } from "@/components/health-sync-initializer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,6 +33,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <RefreshProvider>
+          <HealthSyncInitializer />
           <SidebarProvider defaultOpen>
             <div className="flex min-h-screen w-full">
               <AppSidebar />

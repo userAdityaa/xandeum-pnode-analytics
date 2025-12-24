@@ -86,40 +86,40 @@ export async function syncNodeStats(): Promise<void> {
       return;
     }
     
-    // Batch fetch stats from public nodes to avoid network congestion
-    const BATCH_SIZE = 10;
-    for (let i = 0; i < publicNodes.length; i += BATCH_SIZE) {
-      const batch = publicNodes.slice(i, i + BATCH_SIZE);
-      await Promise.all(batch.map(async (node) => {
-        const [ip, portStr] = node.address.split(":");
-        const port = node.rpc_port || 6000;
-        const stats = await fetchNodeStats(ip, port);
-        if (stats) {
-          await prisma.nodeStats.upsert({
-            where: { address: node.address },
-            update: {
-              cpuPercent: stats.cpu_percent,
-              ramUsed: stats.ram_used ? BigInt(stats.ram_used) : null,
-              ramTotal: stats.ram_total ? BigInt(stats.ram_total) : null,
-              activeStreams: stats.active_streams,
-              packetsReceived: stats.packets_received ? BigInt(stats.packets_received) : null,
-              packetsSent: stats.packets_sent ? BigInt(stats.packets_sent) : null,
-              lastFetched: BigInt(now),
-            },
-            create: {
-              address: node.address,
-              cpuPercent: stats.cpu_percent,
-              ramUsed: stats.ram_used ? BigInt(stats.ram_used) : null,
-              ramTotal: stats.ram_total ? BigInt(stats.ram_total) : null,
-              activeStreams: stats.active_streams,
-              packetsReceived: stats.packets_received ? BigInt(stats.packets_received) : null,
-              packetsSent: stats.packets_sent ? BigInt(stats.packets_sent) : null,
-              lastFetched: BigInt(now),
-            },
-          });
-        }
-      }));
-    }
+    // Fetch stats from all public nodes in parallel
+    const fetchPromises = publicNodes.map(async (node) => {
+      const [ip, portStr] = node.address.split(':');
+      const port = node.rpc_port || 6000; // Use rpc_port from API or default to 6000
+      
+      const stats = await fetchNodeStats(ip, port);
+      
+      if (stats) {
+        await prisma.nodeStats.upsert({
+          where: { address: node.address },
+          update: {
+            cpuPercent: stats.cpu_percent,
+            ramUsed: stats.ram_used ? BigInt(stats.ram_used) : null,
+            ramTotal: stats.ram_total ? BigInt(stats.ram_total) : null,
+            activeStreams: stats.active_streams,
+            packetsReceived: stats.packets_received ? BigInt(stats.packets_received) : null,
+            packetsSent: stats.packets_sent ? BigInt(stats.packets_sent) : null,
+            lastFetched: BigInt(now),
+          },
+          create: {
+            address: node.address,
+            cpuPercent: stats.cpu_percent,
+            ramUsed: stats.ram_used ? BigInt(stats.ram_used) : null,
+            ramTotal: stats.ram_total ? BigInt(stats.ram_total) : null,
+            activeStreams: stats.active_streams,
+            packetsReceived: stats.packets_received ? BigInt(stats.packets_received) : null,
+            packetsSent: stats.packets_sent ? BigInt(stats.packets_sent) : null,
+            lastFetched: BigInt(now),
+          },
+        });
+      }
+    });
+    
+    await Promise.all(fetchPromises);
     
     hasInitialSync = true;
     

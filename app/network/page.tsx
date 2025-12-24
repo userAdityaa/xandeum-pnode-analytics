@@ -122,7 +122,7 @@ export default function NetworkPage() {
     return `${num} pkt/s`
   }
 
-  if (loading) {
+  if (loading || !stats || !healthData || !pNodesData || !riskData) {
     return (
       <div 
         className="p-6 space-y-6"
@@ -137,22 +137,6 @@ export default function NetworkPage() {
             <div className="h-96 bg-sidebar/40 rounded-xl"></div>
             <div className="h-96 bg-sidebar/40 rounded-xl"></div>
           </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (!stats || !healthData || !pNodesData || !riskData) {
-    return (
-      <div 
-        className="p-6"
-        style={{
-          marginLeft: state === "expanded" ? "14rem" : "6rem",
-          transition: "margin-left 300ms ease-in-out"
-        }}
-      >
-        <div className="text-center text-sidebar-foreground/60 py-12">
-          No network data available
         </div>
       </div>
     )

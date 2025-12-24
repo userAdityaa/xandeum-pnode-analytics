@@ -14,8 +14,12 @@ interface TrendData {
 interface HistoryResponse {
   data: TrendData[]
   realDataPoints: number
+  mockDataPoints: number
   totalPoints: number
+  realDataPercentage: number
   hasRealData: boolean
+  totalSnapshotsInDB: number
+  range: string
 }
 
 type TimeRange = "1h" | "24h" | "30d"
@@ -25,6 +29,9 @@ export function NetworkTrendsChart() {
   const [loading, setLoading] = useState(true)
   const [hasRealData, setHasRealData] = useState(false)
   const [realDataPoints, setRealDataPoints] = useState(0)
+  const [mockDataPoints, setMockDataPoints] = useState(0)
+  const [realDataPercentage, setRealDataPercentage] = useState(0)
+  const [totalSnapshots, setTotalSnapshots] = useState(0)
   const [timeRange, setTimeRange] = useState<TimeRange>("1h")
 
   useEffect(() => {
@@ -43,6 +50,9 @@ export function NetworkTrendsChart() {
         setData(result.data)
         setHasRealData(result.hasRealData)
         setRealDataPoints(result.realDataPoints)
+        setMockDataPoints(result.mockDataPoints || 0)
+        setRealDataPercentage(result.realDataPercentage || 0)
+        setTotalSnapshots(result.totalSnapshotsInDB || 0)
       } catch (error) {
         console.error('Failed to update chart data:', error)
       } finally {
@@ -108,12 +118,28 @@ export function NetworkTrendsChart() {
             <h3 className="text-sm font-semibold text-sidebar-foreground">Network Health Trends</h3>
             <p className="text-xs text-sidebar-foreground/60">
               {timeRange === "1h" ? "Last hour" : timeRange === "24h" ? "Last 24 hours" : "Last 30 days"} performance metrics
-              {hasRealData && (
-                <span className="ml-2 text-emerald-400">
-                  • {realDataPoints} real data points
+            </p>
+            <div className="flex items-center gap-3 mt-1 text-xs">
+              {hasRealData ? (
+                <>
+                  <span className="text-emerald-400 font-medium">
+                    ✓ {realDataPoints} real ({realDataPercentage}%)
+                  </span>
+                  {mockDataPoints > 0 && (
+                    <span className="text-amber-400/70">
+                      {mockDataPoints} simulated
+                    </span>
+                  )}
+                  <span className="text-sidebar-foreground/40">
+                    | {totalSnapshots} total in DB
+                  </span>
+                </>
+              ) : (
+                <span className="text-amber-400/70">
+                  ⚠ Using simulated data - sync in progress
                 </span>
               )}
-            </p>
+            </div>
           </div>
           
           {/* Time range selector */}

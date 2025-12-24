@@ -156,18 +156,25 @@ export async function GET(request: Request) {
       }
     }
     
+    const realDataPercentage = Math.round((realDataCount / pointsToShow) * 100)
+    
     console.log('History API response:', {
       range,
       realDataPoints: realDataCount,
       totalPoints: pointsToShow,
-      latestDataPoint: trendData[trendData.length - 1]
+      realDataPercentage: `${realDataPercentage}%`,
+      latestDataPoint: trendData[trendData.length - 1],
+      totalSnapshotsInDB: allSnapshots.length
     })
     
     return NextResponse.json({
       data: trendData,
       realDataPoints: realDataCount,
+      mockDataPoints: pointsToShow - realDataCount,
       totalPoints: pointsToShow,
+      realDataPercentage,
       hasRealData: realDataCount > 0,
+      totalSnapshotsInDB: allSnapshots.length,
       range
     })
   } catch (error: any) {

@@ -134,7 +134,6 @@ export function TopNodesTable() {
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {getSortIcon(sortMode)}
             <div>
               <h3 className="text-lg font-semibold text-sidebar-foreground">
                 Top Performers by {getSortLabel()}
@@ -189,17 +188,17 @@ export function TopNodesTable() {
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full table-fixed">
             <thead>
               <tr className="border-b border-white/10">
-                <th className="text-left py-3 px-2 text-xs font-semibold text-sidebar-foreground/60">#</th>
-                <th className="text-left py-3 px-2 text-xs font-semibold text-sidebar-foreground/60">{getSortLabel()}</th>
-                <th className="text-left py-3 px-2 text-xs font-semibold text-sidebar-foreground/60">Status</th>
-                <th className="text-left py-3 px-2 text-xs font-semibold text-sidebar-foreground/60">Address</th>
-                <th className="text-left py-3 px-2 text-xs font-semibold text-sidebar-foreground/60">Version</th>
-                <th className="text-left py-3 px-2 text-xs font-semibold text-sidebar-foreground/60">CPU</th>
-                <th className="text-left py-3 px-2 text-xs font-semibold text-sidebar-foreground/60">RAM</th>
-                <th className="text-left py-3 px-2 text-xs font-semibold text-sidebar-foreground/60">Last Seen</th>
+                <th className="text-left py-3 px-2 text-xs font-semibold text-sidebar-foreground/60 w-8">#</th>
+                <th className="text-left py-3 px-2 text-xs font-semibold text-sidebar-foreground/60 w-24">{getSortLabel()}</th>
+                <th className="text-left py-3 px-2 text-xs font-semibold text-sidebar-foreground/60 w-28">Status</th>
+                <th className="text-left py-3 px-2 text-xs font-semibold text-sidebar-foreground/60 w-40">Address</th>
+                <th className="text-left py-3 px-2 text-xs font-semibold text-sidebar-foreground/60 w-20">Version</th>
+                <th className="text-left py-3 px-2 text-xs font-semibold text-sidebar-foreground/60 w-16">CPU</th>
+                <th className="text-left py-3 px-2 text-xs font-semibold text-sidebar-foreground/60 w-16">RAM</th>
+                <th className="text-left py-3 px-2 text-xs font-semibold text-sidebar-foreground/60 w-24">Last Seen</th>
               </tr>
             </thead>
             <tbody>
