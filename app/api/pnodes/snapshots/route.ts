@@ -32,21 +32,22 @@ export async function POST() {
         : 0
     }
 
-    // Add to in-memory store
-    snapshotStore.addSnapshot(snapshot)
+    // Add to database
+    await snapshotStore.addSnapshot(snapshot)
 
+    const totalSnapshots = await snapshotStore.getCount()
     console.log('Snapshot collected:', {
       networkHealth: snapshot.networkHealth,
       activeNodes: snapshot.activeNodes,
       riskScore: snapshot.riskScore,
       versionDrift: snapshot.outdatedPercentage,
-      totalSnapshots: snapshotStore.getCount()
+      totalSnapshots
     })
 
     return NextResponse.json({ 
       success: true, 
       snapshot,
-      totalSnapshots: snapshotStore.getCount() 
+      totalSnapshots
     })
   } catch (error: any) {
     console.error("Failed to collect snapshot:", error)
@@ -59,7 +60,7 @@ export async function POST() {
 
 export async function GET() {
   try {
-    const snapshots = snapshotStore.getSnapshots()
+    const snapshots = await snapshotStore.getSnapshots()
     return NextResponse.json({ 
       snapshots,
       count: snapshots.length 

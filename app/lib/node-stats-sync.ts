@@ -1,5 +1,6 @@
 import axios from "axios";
 import { callPRPCWithFallback } from "./prpc/client";
+import prisma from './prisma';
 
 export interface NodeStats {
   address: string;
@@ -33,8 +34,6 @@ interface PodsWithStatsResponse {
   pods: PodData[];
 }
 
-// In-memory cache for node stats
-let statsCache: Map<string, NodeStats> = new Map();
 let isSyncing: boolean = false;
 let hasInitialSync: boolean = false;
 
@@ -95,15 +94,27 @@ export async function syncNodeStats(): Promise<void> {
       const stats = await fetchNodeStats(ip, port);
       
       if (stats) {
-        statsCache.set(node.address, {
-          address: node.address,
-          cpuPercent: stats.cpu_percent,
-          ramUsed: stats.ram_used,
-          ramTotal: stats.ram_total,
-          activeStreams: stats.active_streams,
-          packetsReceived: stats.packets_received,
-          packetsSent: stats.packets_sent,
-          lastFetched: now
+        await prisma.nodeStats.upsert({
+          where: { address: node.address },
+          update: {
+            cpuPercent: stats.cpu_percent,
+            ramUsed: stats.ram_used ? BigInt(stats.ram_used) : null,
+            ramTotal: stats.ram_total ? BigInt(stats.ram_total) : null,
+            activeStreams: stats.active_streams,
+            packetsReceived: stats.packets_received ? BigInt(stats.packets_received) : null,
+            packetsSent: stats.packets_sent ? BigInt(stats.packets_sent) : null,
+            lastFetched: BigInt(now),
+          },
+          create: {
+            address: node.address,
+            cpuPercent: stats.cpu_percent,
+            ramUsed: stats.ram_used ? BigInt(stats.ram_used) : null,
+            ramTotal: stats.ram_total ? BigInt(stats.ram_total) : null,
+            activeStreams: stats.active_streams,
+            packetsReceived: stats.packets_received ? BigInt(stats.packets_received) : null,
+            packetsSent: stats.packets_sent ? BigInt(stats.packets_sent) : null,
+            lastFetched: BigInt(now),
+          },
         });
       }
     });
@@ -143,15 +154,51 @@ export async function ensureNodeStatsSync(): Promise<void> {
 /**
  * Get cached stats for a specific node
  */
-export function getNodeStats(address: string): NodeStats | undefined {
-  return statsCache.get(address);
+export async function getNodeStats(address: string): Promise<NodeStats | undefined> {
+  try {
+    const stats = await prisma.nodeStats.findUnique({
+      where: { address },
+    });
+    
+    if (!stats) return undefined;
+    
+    return {
+      address: stats.address,
+      cpuPercent: stats.cpuPercent ?? undefined,
+      ramUsed: stats.ramUsed ? Number(stats.ramUsed) : undefined,
+      ramTotal: stats.ramTotal ? Number(stats.ramTotal) : undefined,
+      activeStreams: stats.activeStreams ?? undefined,
+      packetsReceived: stats.packetsReceived ? Number(stats.packetsReceived) : undefined,
+      packetsSent: stats.packetsSent ? Number(stats.packetsSent) : undefined,
+      lastFetched: Number(stats.lastFetched),
+    };
+  } catch (error) {
+    console.error('[NodeStatsSync] Error getting node stats:', error);
+    return undefined;
+  }
 }
 
 /**
  * Get all cached node stats
  */
-export function getAllNodeStats(): NodeStats[] {
-  return Array.from(statsCache.values());
+export async function getAllNodeStats(): Promise<NodeStats[]> {
+  try {
+    const allStats = await prisma.nodeStats.findMany();
+    
+    return allStats.map(stats => ({
+      address: stats.address,
+      cpuPercent: stats.cpuPercent ?? undefined,
+      ramUsed: stats.ramUsed ? Number(stats.ramUsed) : undefined,
+      ramTotal: stats.ramTotal ? Number(stats.ramTotal) : undefined,
+      activeStreams: stats.activeStreams ?? undefined,
+      packetsReceived: stats.packetsReceived ? Number(stats.packetsReceived) : undefined,
+      packetsSent: stats.packetsSent ? Number(stats.packetsSent) : undefined,
+      lastFetched: Number(stats.lastFetched),
+    }));
+  } catch (error) {
+    console.error('[NodeStatsSync] Error getting all node stats:', error);
+    return [];
+  }
 }
 
 /**

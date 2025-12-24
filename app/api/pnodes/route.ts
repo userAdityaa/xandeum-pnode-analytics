@@ -5,6 +5,7 @@ import { computeNodeHealth } from "@/app/lib/analytics/health";
 import { PNode, PNodesResponse } from "@/app/lib/prpc/types";
 import { syncStorageData, getNodeStorageData, getStorageSyncStats } from "@/app/lib/storage-sync";
 import { getNodeStats, ensureNodeStatsSync } from "@/app/lib/node-stats-sync";
+import prisma from "@/app/lib/prisma";
 
 interface GeoLocation {
   country?: string;
@@ -13,12 +14,23 @@ interface GeoLocation {
   longitude?: number;
 }
 
-// Cache for IP geolocation to avoid excessive API calls
-const geoCache = new Map<string, GeoLocation>();
-
 async function getGeolocation(ip: string): Promise<GeoLocation> {
-  if (geoCache.has(ip)) {
-    return geoCache.get(ip)!;
+  // Check database cache first
+  try {
+    const cached = await prisma.geoLocation.findUnique({
+      where: { ip },
+    });
+    
+    if (cached) {
+      return {
+        country: cached.country,
+        city: cached.city ?? undefined,
+        latitude: cached.latitude,
+        longitude: cached.longitude,
+      };
+    }
+  } catch (error) {
+    console.error('[Geolocation] Error checking cache:', error);
   }
 
   // Try ip-api.com first (45 req/min, no key needed)
@@ -37,7 +49,22 @@ async function getGeolocation(ip: string): Promise<GeoLocation> {
           latitude: data.lat,
           longitude: data.lon
         };
-        geoCache.set(ip, geo);
+        
+        // Save to database cache
+        try {
+          await prisma.geoLocation.create({
+            data: {
+              ip,
+              country: data.country,
+              city: data.city || null,
+              latitude: data.lat,
+              longitude: data.lon,
+            },
+          });
+        } catch (error) {
+          // Ignore duplicate errors
+        }
+        
         return geo;
       }
     }
@@ -61,7 +88,22 @@ async function getGeolocation(ip: string): Promise<GeoLocation> {
           latitude: data.latitude,
           longitude: data.longitude
         };
-        geoCache.set(ip, geo);
+        
+        // Save to database cache
+        try {
+          await prisma.geoLocation.create({
+            data: {
+              ip,
+              country: data.country_name,
+              city: data.city || null,
+              latitude: data.latitude,
+              longitude: data.longitude,
+            },
+          });
+        } catch (error) {
+          // Ignore duplicate errors
+        }
+        
         return geo;
       }
     }
@@ -127,6 +169,15 @@ export async function GET() {
           new Promise(resolve => setTimeout(resolve, 10000))
         ]);
         
+        // Fetch storage and node stats for all nodes in parallel
+        const storageDataPromises = rawNodes.map((pod: any) => getNodeStorageData(pod.address));
+        const nodeStatsPromises = rawNodes.map((pod: any) => getNodeStats(pod.address));
+        
+        const [allStorageData, allNodeStats] = await Promise.all([
+          Promise.all(storageDataPromises),
+          Promise.all(nodeStatsPromises)
+        ]);
+        
         const pNodes: PNode[] = rawNodes.map((pod: any, index: number) => { 
             const secondsAgo = now - pod.last_seen_timestamp;
 
@@ -142,9 +193,9 @@ export async function GET() {
             if(status === "inactive") flags.push("offline"); 
             if(pod.version !== latestVersion) flags.push("outdated");
             
-            // Get storage data from storage sync
-            const storageData = getNodeStorageData(pod.address);
-            const nodeStats = getNodeStats(pod.address);
+            // Get storage data from pre-fetched results
+            const storageData = allStorageData[index];
+            const nodeStats = allNodeStats[index];
 
             return { 
                 id: pod.address, 
@@ -192,7 +243,7 @@ export async function GET() {
         });
 
         // Get storage sync statistics
-        const storageStats = getStorageSyncStats();
+        const storageStats = await getStorageSyncStats();
         
         // Calculate aggregate storage used for active nodes only
         const aggregateStorageUsed = pNodes

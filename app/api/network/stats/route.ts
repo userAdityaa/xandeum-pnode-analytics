@@ -3,7 +3,7 @@ import { getAllNodeStats } from "@/app/lib/node-stats-sync";
 
 export async function GET() {
   try {
-    const allNodeStats = getAllNodeStats();
+    const allNodeStats = await getAllNodeStats();
     
     if (allNodeStats.length === 0) {
       return NextResponse.json({

@@ -1,3 +1,5 @@
+import prisma from './prisma'
+
 export interface Snapshot {
   timestamp: number
   networkHealth: number
@@ -10,34 +12,104 @@ export interface Snapshot {
 }
 
 class SnapshotStore {
-  private snapshots: Snapshot[] = []
   private readonly maxAge = 30 * 24 * 60 * 60 * 1000 // 30 days in ms
 
-  addSnapshot(snapshot: Snapshot) {
-    this.snapshots.push(snapshot)
-    console.log(`[SnapshotStore] Added snapshot. Total: ${this.snapshots.length}`)
-    this.cleanup()
+  async addSnapshot(snapshot: Snapshot): Promise<void> {
+    try {
+      await prisma.snapshot.create({
+        data: {
+          timestamp: BigInt(snapshot.timestamp),
+          networkHealth: snapshot.networkHealth,
+          activeNodes: snapshot.activeNodes,
+          totalNodes: snapshot.totalNodes,
+          riskScore: snapshot.riskScore,
+          riskLevel: snapshot.riskLevel,
+          outdatedNodes: snapshot.outdatedNodes,
+          outdatedPercentage: snapshot.outdatedPercentage,
+        },
+      })
+      await this.cleanup()
+      const count = await this.getCount()
+      console.log(`[SnapshotStore] Added snapshot. Total: ${count}`)
+    } catch (error) {
+      console.error('[SnapshotStore] Error adding snapshot:', error)
+    }
   }
 
-  getSnapshots(): Snapshot[] {
-    this.cleanup()
-    console.log(`[SnapshotStore] Getting snapshots. Total: ${this.snapshots.length}`)
-    return [...this.snapshots]
+  async getSnapshots(): Promise<Snapshot[]> {
+    try {
+      await this.cleanup()
+      const snapshots = await prisma.snapshot.findMany({
+        orderBy: { timestamp: 'asc' },
+      })
+      console.log(`[SnapshotStore] Getting snapshots. Total: ${snapshots.length}`)
+      return snapshots.map(s => ({
+        timestamp: Number(s.timestamp),
+        networkHealth: s.networkHealth,
+        activeNodes: s.activeNodes,
+        totalNodes: s.totalNodes,
+        riskScore: s.riskScore,
+        riskLevel: s.riskLevel,
+        outdatedNodes: s.outdatedNodes,
+        outdatedPercentage: s.outdatedPercentage,
+      }))
+    } catch (error) {
+      console.error('[SnapshotStore] Error getting snapshots:', error)
+      return []
+    }
   }
 
-  getSnapshotsInRange(startTime: number, endTime: number): Snapshot[] {
-    this.cleanup()
-    return this.snapshots.filter(s => s.timestamp >= startTime && s.timestamp <= endTime)
+  async getSnapshotsInRange(startTime: number, endTime: number): Promise<Snapshot[]> {
+    try {
+      await this.cleanup()
+      const snapshots = await prisma.snapshot.findMany({
+        where: {
+          timestamp: {
+            gte: BigInt(startTime),
+            lte: BigInt(endTime),
+          },
+        },
+        orderBy: { timestamp: 'asc' },
+      })
+      return snapshots.map(s => ({
+        timestamp: Number(s.timestamp),
+        networkHealth: s.networkHealth,
+        activeNodes: s.activeNodes,
+        totalNodes: s.totalNodes,
+        riskScore: s.riskScore,
+        riskLevel: s.riskLevel,
+        outdatedNodes: s.outdatedNodes,
+        outdatedPercentage: s.outdatedPercentage,
+      }))
+    } catch (error) {
+      console.error('[SnapshotStore] Error getting snapshots in range:', error)
+      return []
+    }
   }
 
-  private cleanup() {
-    const cutoff = Date.now() - this.maxAge
-    this.snapshots = this.snapshots.filter(s => s.timestamp > cutoff)
+  private async cleanup(): Promise<void> {
+    try {
+      const cutoff = Date.now() - this.maxAge
+      await prisma.snapshot.deleteMany({
+        where: {
+          timestamp: {
+            lt: BigInt(cutoff),
+          },
+        },
+      })
+    } catch (error) {
+      console.error('[SnapshotStore] Error during cleanup:', error)
+    }
   }
 
-  getCount(): number {
-    this.cleanup()
-    return this.snapshots.length
+  async getCount(): Promise<number> {
+    try {
+      await this.cleanup()
+      return await prisma.snapshot.count()
+    } catch (error) {
+      console.error('[SnapshotStore] Error getting count:', error)
+      return 0
+    }
   }
 }
 

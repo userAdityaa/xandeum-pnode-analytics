@@ -51,7 +51,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const range = searchParams.get('range') || '1h'
     
-    const allSnapshots = snapshotStore.getSnapshots()
+    const allSnapshots = await snapshotStore.getSnapshots()
     const now = new Date()
     
     console.log('Total snapshots in store:', allSnapshots.length)
