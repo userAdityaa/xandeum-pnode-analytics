@@ -4,6 +4,7 @@ import "./globals.css";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Navbar } from "@/components/navbar";
+import { RefreshProvider } from "@/lib/refresh-context";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,17 +31,19 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SidebarProvider defaultOpen>
-          <div className="flex min-h-screen w-full">
-            <AppSidebar />
-            <SidebarInset className="flex flex-col flex-1">
-              <Navbar />
-              <main className="flex-1 overflow-auto">
-                {children}
-              </main>
-            </SidebarInset>
-          </div>
-        </SidebarProvider>
+        <RefreshProvider>
+          <SidebarProvider defaultOpen>
+            <div className="flex min-h-screen w-full">
+              <AppSidebar />
+              <SidebarInset className="flex flex-col flex-1">
+                <Navbar />
+                <main className="flex-1 overflow-auto">
+                  {children}
+                </main>
+              </SidebarInset>
+            </div>
+          </SidebarProvider>
+        </RefreshProvider>
       </body>
     </html>
   );
