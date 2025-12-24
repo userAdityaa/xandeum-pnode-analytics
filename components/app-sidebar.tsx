@@ -32,7 +32,7 @@ const pNodesSection = {
   title: "Analysis",
   items: [
     { title: "pNodes", icon: Network, href: "/pnodes" },
-    { title: "Storage", icon: Box, href: "/storage" },
+    { title: "Network", icon: Box, href: "/network" },
   ],
 }
 
