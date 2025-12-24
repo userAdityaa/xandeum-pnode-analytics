@@ -90,76 +90,51 @@ export function StorageOverviewCard() {
       }} />
 
       <div className="relative z-10 h-full flex flex-col">
-        {/* Header */}
-        <div className="mb-4">
+        {/* Header with Total Info */}
+        <div className="mb-6">
           <h3 className="text-sm font-semibold text-sidebar-foreground flex items-center gap-2">
-            <Database className="w-4 h-4" />
             Network Storage
           </h3>
-          <p className="text-[10px] text-sidebar-foreground/50 mt-0.5">
-            {data.publicNodes + data.privateNodes} nodes • {data.publicNodes} public • {data.privateNodes} private
+          <p className="text-lg font-bold text-sidebar-foreground/90 mt-1">
+            {formatStorage(data.aggregateStorageUsed)} of {formatStorage(data.networkStorageTotal)} Used
           </p>
         </div>
 
-        {/* Bar Chart - Horizontal */}
+        {/* Stacked Bar Chart - iPhone Style */}
         <div className="mb-4">
-          <div className="space-y-3">
-            {/* Total Storage Bar */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-1.5">
-                  <HardDrive className="w-3 h-3 text-purple-400" />
-                  <span className="text-xs text-sidebar-foreground/80">Total</span>
-                </div>
-                <span className="text-xs font-bold text-sidebar-foreground">
-                  {formatStorage(data.networkStorageTotal)}
-                </span>
-              </div>
-              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-linear-to-r from-purple-500 to-purple-400"
-                  style={{ width: '100%' }}
-                />
-              </div>
-            </div>
+          <div className="h-8 bg-white/5 rounded-lg overflow-hidden flex">
+            {/* Used Storage */}
+            <div 
+              className="bg-gradient-to-r from-pink-500 to-pink-400 transition-all duration-500"
+              style={{ width: `${usagePercentage}%` }}
+            />
+            {/* Available Storage */}
+            <div 
+              className="bg-gradient-to-r from-emerald-500/40 to-emerald-400/40 transition-all duration-500"
+              style={{ width: `${100 - usagePercentage}%` }}
+            />
+          </div>
+        </div>
 
-            {/* Used Storage Bar */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-1.5">
-                  <Disc className="w-3 h-3 text-pink-400" />
-                  <span className="text-xs text-sidebar-foreground/80">Used</span>
-                </div>
-                <span className="text-xs font-bold text-sidebar-foreground">
-                  {formatStorage(data.aggregateStorageUsed)}
-                </span>
-              </div>
-              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-linear-to-r from-pink-500 to-pink-400"
-                  style={{ width: `${usagePercentage}%` }}
-                />
-              </div>
+        {/* Legend */}
+        <div className="space-y-2 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-gradient-to-r from-pink-500 to-pink-400" />
+              <span className="text-xs text-sidebar-foreground/80">Used Storage</span>
             </div>
-
-            {/* Available Storage Bar */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-1.5">
-                  <Database className="w-3 h-3 text-emerald-400" />
-                  <span className="text-xs text-sidebar-foreground/80">Available</span>
-                </div>
-                <span className="text-xs font-bold text-sidebar-foreground">
-                  {formatStorage(data.networkStorageTotal - data.aggregateStorageUsed)}
-                </span>
-              </div>
-              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-linear-to-r from-emerald-500 to-emerald-400"
-                  style={{ width: `${100 - usagePercentage}%` }}
-                />
-              </div>
+            <span className="text-xs font-semibold text-sidebar-foreground">
+              {formatStorage(data.aggregateStorageUsed)}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-gradient-to-r from-emerald-500/40 to-emerald-400/40" />
+              <span className="text-xs text-sidebar-foreground/80">Available Storage</span>
             </div>
+            <span className="text-xs font-semibold text-sidebar-foreground">
+              {formatStorage(data.networkStorageTotal - data.aggregateStorageUsed)}
+            </span>
           </div>
         </div>
 
