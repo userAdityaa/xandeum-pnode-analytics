@@ -60,7 +60,7 @@ export function VersionDistributionChart() {
     }
 
     fetchData()
-    const interval = setInterval(fetchData, 60 * 1000)
+    const interval = setInterval(fetchData, 30 * 1000) // Refresh every 30s
     return () => clearInterval(interval)
   }, [])
 
@@ -304,6 +304,7 @@ export function CountryDistributionChart() {
   const [mapViewMode, setMapViewMode] = useState<'storage' | 'health' | 'credit'>('storage')
   const [zoom, setZoom] = useState(1)
   const [center, setCenter] = useState<[number, number]>([0, 20])
+  const [hoveredNode, setHoveredNode] = useState<number | null>(null)
   const [countryMetrics, setCountryMetrics] = useState<{
     storage: Record<string, number>,
     health: Record<string, number>,
@@ -319,6 +320,11 @@ export function CountryDistributionChart() {
       try {
         const response = await fetch('/api/pnodes', { cache: 'no-store' })
         const result = await response.json()
+        console.log('[Country Distribution] Fetched data:', {
+          countryDistribution: result.summary?.countryDistribution,
+          pNodesCount: result.pNodes?.length,
+          hasCountryData: Object.keys(result.summary?.countryDistribution || {}).length > 0
+        })
         setData(result.summary.countryDistribution || {})
         setAllNodes(result.pNodes || [])
         
@@ -358,6 +364,14 @@ export function CountryDistributionChart() {
           avgHealthByCountry[country] = data.total / data.count
         })
         
+        console.log('[Country Distribution] Health Data:', {
+          sampleNodes: result.pNodes?.slice(0, 5).map((n: any) => ({
+            country: n.country,
+            healthScore: n.healthScore
+          })),
+          avgHealthByCountry
+        })
+        
         setCountryMetrics({
           storage: storageByCountry,
           health: avgHealthByCountry,
@@ -386,7 +400,7 @@ export function CountryDistributionChart() {
     }
 
     fetchData()
-    const interval = setInterval(fetchData, 60 * 1000)
+    const interval = setInterval(fetchData, 30 * 1000) // Refresh every 30s
     return () => clearInterval(interval)
   }, [])
 
@@ -405,8 +419,16 @@ export function CountryDistributionChart() {
     .slice(0, 8)
 
   const totalCountries = Object.values(data).reduce((sum, count) => sum + count, 0)
+  
+  console.log('[Country Distribution Render]', {
+    dataKeys: Object.keys(data),
+    countryDataLength: countryData.length,
+    totalCountries,
+    rawData: data
+  })
 
   return (
+    <>
     <div 
       className="rounded-xl bg-sidebar/60 backdrop-blur-xl p-6 h-80 relative overflow-hidden group hover:-translate-y-2 hover:scale-[1.005] transition-all duration-500 cursor-pointer border-2 border-white/20"
       style={{
@@ -441,7 +463,10 @@ export function CountryDistributionChart() {
             <p className="text-[10px] text-sidebar-foreground/50 mt-0.5">{selectedCountry ? 'City breakdown' : `${countryData.length} countries • Click a bar for city details`}</p>
           </div>
           <button
-            onClick={() => setShowMapView(true)}
+            onClick={() => {
+              console.log('View Map clicked, showMapView:', showMapView)
+              setShowMapView(true)
+            }}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-colors text-[10px] text-sidebar-foreground/80 hover:text-sidebar-foreground font-medium"
           >
             <Globe className="w-3 h-3" />
@@ -506,7 +531,7 @@ export function CountryDistributionChart() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 space-y-1.5 overflow-hidden">
+          <div className="flex-1 space-y-1.5 overflow-y-auto scrollbar-none">
           {countryData.length > 0 ? (
             countryData.map((item: DistributionItem, index: number) => {
               const percentage = totalCountries > 0 ? (item.value / totalCountries) * 100 : 0
@@ -550,31 +575,36 @@ export function CountryDistributionChart() {
               )
             })
           ) : (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex flex-col items-center justify-center h-full gap-2">
               <p className="text-xs text-sidebar-foreground/60">No country data available</p>
+              <p className="text-[10px] text-sidebar-foreground/40">Geolocation data is being fetched...</p>
             </div>
           )}
         </div>
         )}
       </div>
+    </div>
       
-      {/* Map View Dialog */}
+      {/* Map View Dialog - Outside the container */}
       <Dialog.Root open={showMapView} onOpenChange={setShowMapView}>
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/20 backdrop-blur-2xl z-50 animate-in fade-in" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[95vw] max-w-6xl max-h-[90vh] overflow-hidden rounded-lg bg-sidebar/95 backdrop-blur-xl border-2 border-white/10 shadow-2xl animate-in fade-in zoom-in-95">
+          <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-xl animate-in fade-in" style={{ zIndex: 9998 }} />
+          <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-6xl max-h-[90vh] overflow-hidden rounded-lg bg-black/95 backdrop-blur-xl border-2 border-white/20 shadow-2xl animate-in fade-in zoom-in-95" style={{ zIndex: 9999 }}>
+            {/* Glass effect layers */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent rounded-lg pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-tl from-blue-500/20 via-transparent to-transparent rounded-lg pointer-events-none" />
             {/* Header */}
-            <div className="p-6 border-b border-white/10 space-y-4">
+            <div className="relative z-10 p-6 border-b border-white/20 space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <Dialog.Title className="text-lg font-semibold text-sidebar-foreground flex items-center gap-2">
+                  <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                     Global Node Distribution
                   </Dialog.Title>
-                  <Dialog.Description className="text-xs text-sidebar-foreground/60 mt-1">
+                  <Dialog.Description className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                     Geographic distribution of {allNodes.length} nodes across {Object.keys(data).length} countries
                   </Dialog.Description>
                 </div>
-                <Dialog.Close className="rounded-lg p-2 hover:bg-white/10 transition-colors">
+                <Dialog.Close className="rounded-lg p-2 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors text-gray-900 dark:text-white">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
@@ -587,8 +617,8 @@ export function CountryDistributionChart() {
                   onClick={() => setMapViewMode('storage')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     mapViewMode === 'storage'
-                      ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                      : 'bg-white/5 text-sidebar-foreground/60 hover:bg-white/10 border border-white/10'
+                      ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                      : 'bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 border border-gray-300 dark:border-white/10'
                   }`}
                 >
                   <HardDrive className="w-3.5 h-3.5" />
@@ -598,8 +628,8 @@ export function CountryDistributionChart() {
                   onClick={() => setMapViewMode('health')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     mapViewMode === 'health'
-                      ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                      : 'bg-white/5 text-sidebar-foreground/60 hover:bg-white/10 border border-white/10'
+                      ? 'bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30'
+                      : 'bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 border border-gray-300 dark:border-white/10'
                   }`}
                 >
                   <Activity className="w-3.5 h-3.5" />
@@ -609,8 +639,8 @@ export function CountryDistributionChart() {
                   onClick={() => setMapViewMode('credit')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     mapViewMode === 'credit'
-                      ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                      : 'bg-white/5 text-sidebar-foreground/60 hover:bg-white/10 border border-white/10'
+                      ? 'bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/30'
+                      : 'bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 border border-gray-300 dark:border-white/10'
                   }`}
                 >
                   <Award className="w-3.5 h-3.5" />
@@ -622,20 +652,20 @@ export function CountryDistributionChart() {
                   <button
                     onClick={() => setZoom(Math.max(1, zoom - 0.5))}
                     disabled={zoom <= 1}
-                    className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="p-1.5 rounded-lg bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 border border-gray-300 dark:border-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-gray-900 dark:text-white"
                   >
                     <ZoomOut className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setZoom(Math.min(4, zoom + 0.5))}
                     disabled={zoom >= 4}
-                    className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="p-1.5 rounded-lg bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 border border-gray-300 dark:border-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-gray-900 dark:text-white"
                   >
                     <ZoomIn className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => { setZoom(1); setCenter([0, 20]) }}
-                    className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
+                    className="p-1.5 rounded-lg bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 border border-gray-300 dark:border-white/10 transition-colors text-gray-900 dark:text-white"
                   >
                     <Maximize2 className="w-4 h-4" />
                   </button>
@@ -644,8 +674,8 @@ export function CountryDistributionChart() {
             </div>
             
             {/* Map Content */}
-            <div className="p-6 max-h-[calc(90vh-200px)] overflow-y-auto scrollbar-none">
-              <div className="bg-sidebar/40 rounded-xl border border-white/10 p-4">
+            <div className="relative z-10 p-6 max-h-[calc(90vh-200px)] overflow-y-auto scrollbar-none">
+              <div className="bg-black/60 rounded-xl border border-white/10 p-4">
                 <ComposableMap
                   projection="geoMercator"
                   className="w-full h-125"
@@ -774,15 +804,69 @@ export function CountryDistributionChart() {
                         }
                       }
                       
+                      const isHovered = hoveredNode === index
+                      
                       return (
                         <Marker key={index} coordinates={[node.longitude, node.latitude]}>
-                          <circle
-                            r={2 / zoom}
-                            fill={markerColor}
-                            stroke="rgba(255, 255, 255, 0.8)"
-                            strokeWidth={0.5 / zoom}
-                            className="animate-pulse"
-                          />
+                          <g
+                            onMouseEnter={() => setHoveredNode(index)}
+                            onMouseLeave={() => setHoveredNode(null)}
+                          >
+                            <circle
+                              r={isHovered ? 4 / zoom : 2 / zoom}
+                              fill={markerColor}
+                              stroke="rgba(255, 255, 255, 0.8)"
+                              strokeWidth={isHovered ? 1 / zoom : 0.5 / zoom}
+                              className="transition-all"
+                              style={{ cursor: 'pointer' }}
+                            />
+                            {isHovered && (
+                              <foreignObject
+                                x={6 / zoom}
+                                y={-20 / zoom}
+                                width={250}
+                                height={150}
+                                style={{ pointerEvents: 'none', overflow: 'visible' }}
+                              >
+                                <div
+                                  style={{
+                                    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+                                    color: 'white',
+                                    padding: '10px',
+                                    borderRadius: '8px',
+                                    fontSize: '12px',
+                                    border: '1px solid rgba(255, 255, 255, 0.3)',
+                                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.9)',
+                                    minWidth: '200px'
+                                  }}
+                                >
+                                  <div style={{ fontWeight: 'bold', marginBottom: '6px', fontSize: '13px' }}>
+                                    {node.city ? `${node.city}, ${node.country}` : node.country}
+                                  </div>
+                                  {node.ip && (
+                                    <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '3px' }}>
+                                      IP: {node.ip}
+                                    </div>
+                                  )}
+                                  {node.storageUsed && (
+                                    <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '3px' }}>
+                                      Storage: {(node.storageUsed / 1024).toFixed(2)} KB
+                                    </div>
+                                  )}
+                                  {node.healthScore !== undefined && (
+                                    <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '3px' }}>
+                                      Health: {node.healthScore.toFixed(0)}%
+                                    </div>
+                                  )}
+                                  {node.credits !== undefined && (
+                                    <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)' }}>
+                                      Credits: {node.credits.toFixed(0)}
+                                    </div>
+                                  )}
+                                </div>
+                              </foreignObject>
+                            )}
+                          </g>
                         </Marker>
                       )
                     })}
@@ -916,7 +1000,7 @@ export function CountryDistributionChart() {
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
-    </div>
+    </>
   )
 }
 
