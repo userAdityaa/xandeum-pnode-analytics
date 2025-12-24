@@ -55,7 +55,7 @@ export function NetworkTrendsChart() {
     collectAndFetch()
     
     // Set up periodic collection and refresh
-    const interval = timeRange === "1h" ? 60 * 1000 : timeRange === "24h" ? 5 * 60 * 1000 : 10 * 60 * 1000
+    const interval = timeRange === "1h" ? 30 * 1000 : timeRange === "24h" ? 5 * 60 * 1000 : 10 * 60 * 1000
     const timer = setInterval(collectAndFetch, interval)
     
     return () => clearInterval(timer)

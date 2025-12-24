@@ -39,7 +39,7 @@ export function TopNodesTable() {
     }
 
     fetchData()
-    const interval = setInterval(fetchData, 60 * 1000)
+    const interval = setInterval(fetchData, 30 * 1000) // Refresh every 30s
     return () => clearInterval(interval)
   }, [])
 

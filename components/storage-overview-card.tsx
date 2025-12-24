@@ -34,7 +34,7 @@ export function StorageOverviewCard() {
     }
 
     fetchData()
-    const interval = setInterval(fetchData, 60 * 1000) // Refresh every minute
+    const interval = setInterval(fetchData, 30 * 1000) // Refresh every 30s
     return () => clearInterval(interval)
   }, [])
 
