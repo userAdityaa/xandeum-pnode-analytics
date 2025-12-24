@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react"
 import { Search, Download, RefreshCw, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import NodeSearchBar from "@/components/node-search-bar"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { useRefresh } from "@/lib/refresh-context"
 import * as Popover from '@radix-ui/react-popover'
@@ -49,14 +49,7 @@ export default function Navbar() {
       <div className="flex flex-1 items-center gap-4">
         <h1 className="text-lg font-semibold text-sidebar-foreground">Dashboard</h1>
         
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-sidebar-foreground/50" />
-          <Input
-            type="search"
-            placeholder="Search nodes... (Press Enter)"
-            className="w-full bg-background/50 pl-8 text-sm border-zinc-800 focus-visible:ring-zinc-800"
-          />
-        </div>
+        <NodeSearchBar className="flex-1 max-w-md" />
       </div>
 
       <div className="flex items-center gap-2">

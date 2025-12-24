@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { Search, ChevronDown } from "lucide-react"
 import { useSidebar } from "@/components/ui/sidebar"
 
@@ -27,16 +28,22 @@ interface Summary {
 
 export default function PNodesPage() {
   const { state } = useSidebar()
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [nodes, setNodes] = useState<Node[]>([])
   const [summary, setSummary] = useState<Summary>({ totalKnown: 0, active: 0, inactive: 0 })
   const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [versionFilter, setVersionFilter] = useState<string>("all")
   const [sortColumn, setSortColumn] = useState<string>("lastSeen")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 15
+
+  // Always reflect the search param in the input
+  const searchQuery = searchParams?.get("search") || ""
+
+  // No need to setSearchQuery; searchQuery is always derived from searchParams
 
   useEffect(() => {
     async function fetchData() {
@@ -240,7 +247,10 @@ export default function PNodesPage() {
               type="text"
               placeholder="Search IP, Pubkey..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value
+                router.replace(val ? `/pnodes?search=${encodeURIComponent(val)}` : "/pnodes", { scroll: false })
+              }}
               className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-sidebar-foreground placeholder:text-sidebar-foreground/40 focus:outline-none focus:border-white/20"
             />
           </div>
