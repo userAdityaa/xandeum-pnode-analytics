@@ -43,13 +43,6 @@ const resourcesSection = {
   ],
 }
 
-const settingsSection = {
-  title: "Settings",
-  items: [
-    { title: "Settings", icon: Settings, href: "/settings" },
-  ],
-}
-
 export function AppSidebar() {
   const { toggleSidebar, state } = useSidebar()
   const pathname = usePathname()
@@ -149,24 +142,6 @@ export function AppSidebar() {
                     </CollapsibleContent>
                   </SidebarMenuItem>
                 </Collapsible>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>{settingsSection.title}</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {settingsSection.items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title}>
-                    <a href={item.href}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
               ))}
             </SidebarMenu>
           </SidebarGroupContent>

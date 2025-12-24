@@ -42,7 +42,6 @@ class SnapshotStore {
       const snapshots = await prisma.snapshot.findMany({
         orderBy: { timestamp: 'asc' },
       })
-      console.log(`[SnapshotStore] Getting snapshots. Total: ${snapshots.length}`)
       return snapshots.map(s => ({
         timestamp: Number(s.timestamp),
         networkHealth: s.networkHealth,
@@ -54,7 +53,6 @@ class SnapshotStore {
         outdatedPercentage: s.outdatedPercentage,
       }))
     } catch (error) {
-      console.error('[SnapshotStore] Error getting snapshots:', error)
       return []
     }
   }

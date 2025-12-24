@@ -26,11 +26,20 @@ interface RiskData {
   }
 }
 
+
+function toCSV(obj: Record<string, any>): string {
+  const keys = Object.keys(obj)
+  const values = keys.map(k => obj[k])
+  return keys.join(',') + '\n' + values.join(',')
+}
+
 export function OverviewCards() {
   const [healthData, setHealthData] = useState<HealthData | null>(null)
   const [riskData, setRiskData] = useState<RiskData | null>(null)
   const [loading, setLoading] = useState(true)
   const { refreshTrigger } = useRefresh()
+
+  // Export handler
 
   useEffect(() => {
     async function fetchData() {

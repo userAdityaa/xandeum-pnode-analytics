@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { Navbar } from "@/components/navbar";
+import Navbar from "@/components/navbar";
 import { RefreshProvider } from "@/lib/refresh-context";
 import { HealthSyncInitializer } from "@/components/health-sync-initializer";
 
