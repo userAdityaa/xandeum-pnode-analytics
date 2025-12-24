@@ -21,30 +21,52 @@ async function getGeolocation(ip: string): Promise<GeoLocation> {
     return geoCache.get(ip)!;
   }
 
+  // Try ip-api.com first (45 req/min, no key needed)
   try {
-    // Using ipwhois.app - free unlimited API (faster, no strict rate limits)
-    const response = await fetch(`http://ipwho.is/${ip}`, {
-      signal: AbortSignal.timeout(2000)
+    const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,city,lat,lon`, {
+      signal: AbortSignal.timeout(3000)
     });
     
-    if (!response.ok) {
-      return {};
-    }
-    
-    const data = await response.json();
-    
-    if (data.success !== false) {
-      const geo = {
-        country: data.country,
-        city: data.city,
-        latitude: data.latitude,
-        longitude: data.longitude
-      };
-      geoCache.set(ip, geo);
-      return geo;
+    if (response.ok) {
+      const data = await response.json();
+      
+      if (data.status === 'success' && data.country) {
+        const geo = {
+          country: data.country,
+          city: data.city,
+          latitude: data.lat,
+          longitude: data.lon
+        };
+        geoCache.set(ip, geo);
+        return geo;
+      }
     }
   } catch (error) {
-    // Silently fail for geolocation - it's not critical
+    // Try fallback
+  }
+
+  // Fallback to ipapi.co (1000 req/day free)
+  try {
+    const response = await fetch(`https://ipapi.co/${ip}/json/`, {
+      signal: AbortSignal.timeout(3000)
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      
+      if (data.country_name) {
+        const geo = {
+          country: data.country_name,
+          city: data.city,
+          latitude: data.latitude,
+          longitude: data.longitude
+        };
+        geoCache.set(ip, geo);
+        return geo;
+      }
+    }
+  } catch (error) {
+    // Silent fail
   }
   
   return {};
@@ -161,6 +183,13 @@ export async function GET() {
             countryCount[node.country] = (countryCount[node.country] ?? 0) + 1;
           }
         }
+        
+        console.log('[API/pnodes] Country distribution:', {
+          totalNodes: pNodes.length,
+          nodesWithCountry: Object.values(countryCount).reduce((sum, c) => sum + c, 0),
+          uniqueCountries: Object.keys(countryCount).length,
+          countries: countryCount
+        });
 
         // Get storage sync statistics
         const storageStats = getStorageSyncStats();
