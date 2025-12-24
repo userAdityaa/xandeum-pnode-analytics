@@ -5,6 +5,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
 import { MapIcon, Globe, ZoomIn, ZoomOut, Maximize2, Activity, HardDrive, Award } from "lucide-react"
 import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from "react-simple-maps"
 import * as Dialog from '@radix-ui/react-dialog'
+import * as Popover from '@radix-ui/react-popover'
 
 interface DistributionData {
   versionDistribution: Record<string, number>
@@ -131,14 +132,23 @@ export function VersionDistributionChart() {
           <p className="text-[10px] text-sidebar-foreground/50 mt-0.5">Click on a tier for more details</p>
         </div>
 
-        <div className="flex items-center justify-between flex-1 gap-4">
+        <div className="flex items-start justify-between flex-1 gap-6">
         {/* Chart on the left */}
-        <div className="relative w-56 h-56 shrink-0 p-4">
-          <div className="w-full h-full" style={{ overflow: 'visible' }}>
+        <div className="relative w-44 h-44 shrink-0 flex items-center justify-center">
+          <div className="w-full h-full" style={{ overflow: 'hidden' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart style={{ outline: 'none', overflow: 'visible' }}>
-                {versionData.slice(0, 4).map((item, index) => {
+              <PieChart style={{ outline: 'none' }} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                {versionData.map((item, index) => {
                   const isSelected = selectedVersion?.name === item.name
+                  // Adjust sizing based on total number of versions
+                  const tierCount = versionData.length
+                  const maxRadius = 85 // Max radius as percentage to prevent cutoff
+                  const centerRadius = 20 // Center empty space
+                  const availableSpace = maxRadius - centerRadius
+                  const tierWidth = Math.max(6, availableSpace / tierCount) // Minimum 6px per tier
+                  const innerRadius = centerRadius + (index * tierWidth)
+                  const outerRadius = innerRadius + tierWidth - 1
+                  
                   return (
                     <Pie
                       key={index}
@@ -147,10 +157,10 @@ export function VersionDistributionChart() {
                       cy="50%"
                       startAngle={90}
                       endAngle={-270}
-                      innerRadius={40 + index * 15}
-                      outerRadius={52 + index * 15}
+                      innerRadius={innerRadius}
+                      outerRadius={outerRadius}
                       dataKey="value"
-                      stroke={isSelected ? VERSION_COLORS[index] : "none"}
+                      stroke={isSelected ? VERSION_COLORS[index % VERSION_COLORS.length] : "none"}
                       strokeWidth={isSelected ? 3 : 0}
                       onClick={(data) => {
                         if (data.name !== 'rest') {
@@ -164,21 +174,22 @@ export function VersionDistributionChart() {
                       }}
                       style={{ 
                         cursor: 'pointer',
-                        filter: isSelected ? 'brightness(1.3) drop-shadow(0 0 8px ' + VERSION_COLORS[index] + ')' : 'brightness(1)',
+                        filter: isSelected ? 'brightness(1.3) drop-shadow(0 0 8px ' + VERSION_COLORS[index % VERSION_COLORS.length] + ')' : 'brightness(1)',
                         transition: 'all 0.3s ease',
                         outline: 'none'
                       }}
                       isAnimationActive={false}
                     >
-                      <Cell fill={VERSION_COLORS[index]} style={{ outline: 'none' }} />
+                      <Cell fill={VERSION_COLORS[index % VERSION_COLORS.length]} style={{ outline: 'none' }} />
                       <Cell fill="rgba(255,255,255,0.05)" style={{ outline: 'none' }} />
                     </Pie>
                   )
                 })}
                 <Tooltip 
                   content={<CustomTooltip />}
-                  position={{ x: 250, y: 100 }}
-                  wrapperStyle={{ zIndex: 1000 }}
+                  cursor={{ fill: 'transparent' }}
+                  wrapperStyle={{ zIndex: 1000, pointerEvents: 'none' }}
+                  allowEscapeViewBox={{ x: false, y: false }}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -186,66 +197,96 @@ export function VersionDistributionChart() {
           
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="text-center">
-              <div className="text-3xl font-bold text-sidebar-foreground">
+              <div className="text-sm font-bold text-sidebar-foreground">
                 {totalVersions > 0 ? Math.round((versionData[0]?.value || 0) / totalVersions * 100) : 0}%
               </div>
-              <div className="text-[10px] text-sidebar-foreground/60 mt-1">Top Version</div>
             </div>
           </div>
         </div>
 
-        {/* Legend or Selected Version Detail */}
-        {selectedVersion ? (
-          <div className="flex-1 space-y-3 animate-in fade-in duration-300">
-            <h4 className="text-sm font-semibold text-sidebar-foreground">Version Details</h4>
-            <div className="space-y-2 bg-white/5 rounded-lg p-3">
-              <div>
-                <p className="text-[10px] text-sidebar-foreground/60 mb-1">Version</p>
-                <p className="text-sm font-medium text-sidebar-foreground break-all">
-                  {selectedVersion.name}
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] text-sidebar-foreground/60 mb-1">Nodes</p>
-                <p className="text-2xl font-bold text-sidebar-foreground">
-                  {selectedVersion.value}
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] text-sidebar-foreground/60 mb-1">Percentage</p>
-                <p className="text-lg font-semibold text-sidebar-foreground">
-                  {totalVersions > 0 ? ((selectedVersion.value / totalVersions) * 100).toFixed(1) : 0}%
-                </p>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="flex-1 space-y-2 content-center">
-            {versionData.slice(0, 4).map((item, index) => {
-              const percentage = totalVersions > 0 ? ((item.value / totalVersions) * 100).toFixed(1) : 0
+        {/* Legend - Always visible */}
+        <div className={`flex-1 space-y-2 flex flex-col overflow-y-auto overflow-x-hidden pr-1 ${versionData.length <= 4 ? 'justify-center' : 'justify-start'}`}>
+          {versionData.map((item, index) => {
+            const percentage = totalVersions > 0 ? ((item.value / totalVersions) * 100).toFixed(1) : 0
+              const isSelected = selectedVersion?.name === item.name
+              const isInChart = index < 4
+              const colorIndex = isInChart ? index : index % VERSION_COLORS.length
               return (
-                <div 
-                  key={index} 
-                  className="flex items-center justify-between text-xs cursor-pointer hover:bg-white/5 rounded px-2 py-1 transition-colors"
-                  onClick={() => setSelectedVersion(item)}
-                >
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                <Popover.Root key={index} open={isSelected} onOpenChange={(open) => {
+                  if (!open && isSelected) {
+                    setSelectedVersion(null)
+                  }
+                }}>
+                  <Popover.Trigger asChild>
                     <div 
-                      className="w-2.5 h-2.5 rounded-full shrink-0" 
-                      style={{ backgroundColor: VERSION_COLORS[index % VERSION_COLORS.length] }}
-                    />
-                    <span className="text-sidebar-foreground/80 truncate" title={item.name}>
-                      {truncateText(item.name, 18)}
-                    </span>
-                  </div>
-                  <span className="text-sidebar-foreground/60 ml-2 shrink-0 font-medium">
-                    {percentage}%
-                  </span>
-                </div>
+                      className="flex items-center justify-between text-xs cursor-pointer hover:bg-white/5 rounded px-2 py-1 transition-colors"
+                      onClick={() => {
+                        if (isSelected) {
+                          setSelectedVersion(null)
+                        } else {
+                          setSelectedVersion(item)
+                        }
+                      }}
+                    >
+                      <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
+                        <div 
+                          className="w-2.5 h-2.5 rounded-full shrink-0" 
+                          style={{ backgroundColor: VERSION_COLORS[colorIndex] }}
+                        />
+                        <span className="text-sidebar-foreground/80 truncate block max-w-full" title={item.name}>
+                          {item.name}
+                        </span>
+                      </div>
+                      <span className="text-sidebar-foreground/60 ml-2 shrink-0 font-medium whitespace-nowrap">
+                        {percentage}%
+                      </span>
+                    </div>
+                  </Popover.Trigger>
+                  <Popover.Portal>
+                    <Popover.Content
+                      className="z-50 w-72 rounded-lg bg-sidebar/95 backdrop-blur-xl border-2 border-white/20 shadow-2xl p-4 animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
+                      side="right"
+                      sideOffset={10}
+                      align="start"
+                      style={{
+                        boxShadow: '0 25px 50px rgba(0, 0, 0, 0.8), 0 10px 20px rgba(0, 0, 0, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.2)'
+                      }}
+                    >
+                      <div className="space-y-3">
+                        <div>
+                          <h4 className="text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider mb-2">Version Details</h4>
+                          <div className="space-y-3">
+                            <div className="space-y-1">
+                              <p className="text-[10px] text-sidebar-foreground/60 uppercase tracking-wider">Version</p>
+                              <p className="text-sm font-medium text-sidebar-foreground break-all leading-tight">
+                                {item.name}
+                              </p>
+                            </div>
+                            <div className="h-px bg-white/10"></div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="space-y-1">
+                                <p className="text-[10px] text-sidebar-foreground/60 uppercase tracking-wider">Nodes</p>
+                                <p className="text-xl font-bold text-sidebar-foreground">
+                                  {item.value}
+                                </p>
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-[10px] text-sidebar-foreground/60 uppercase tracking-wider">Percentage</p>
+                                <p className="text-xl font-bold text-sidebar-foreground">
+                                  {percentage}%
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <Popover.Arrow className="fill-white/20" />
+                    </Popover.Content>
+                  </Popover.Portal>
+                </Popover.Root>
               )
             })}
           </div>
-        )}
         </div>
       </div>
     </div>
