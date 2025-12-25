@@ -79,9 +79,16 @@ export function NetworkTrendsChart() {
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
+      // Try to parse timestamp as number, fallback to string
+      const rawTimestamp = payload[0].payload.timestamp;
+      let displayTime = rawTimestamp;
+      if (!isNaN(Number(rawTimestamp))) {
+        const d = new Date(Number(rawTimestamp));
+        displayTime = d.toLocaleString();
+      }
       return (
         <div className="bg-sidebar/95 backdrop-blur-xl border border-white/20 rounded-lg p-3 shadow-xl">
-          <p className="text-xs text-sidebar-foreground/60 mb-2">{payload[0].payload.timestamp}</p>
+          <p className="text-xs text-sidebar-foreground/60 mb-2">{displayTime}</p>
           {payload.map((entry: any, index: number) => (
             <div key={index} className="flex items-center justify-between gap-4 text-xs">
               <span style={{ color: entry.color }}>{entry.name}:</span>
@@ -93,6 +100,8 @@ export function NetworkTrendsChart() {
     }
     return null
   }
+
+  const chartData = data
 
   return (
     <div className="rounded-xl bg-sidebar/60 backdrop-blur-xl p-6 h-80 relative overflow-hidden group hover:-translate-y-2 hover:scale-[1.005] transition-all duration-500 cursor-pointer border-2 border-white/20"
@@ -120,25 +129,9 @@ export function NetworkTrendsChart() {
               {timeRange === "1h" ? "Last hour" : timeRange === "24h" ? "Last 24 hours" : "Last 30 days"} performance metrics
             </p>
             <div className="flex items-center gap-3 mt-1 text-xs">
-              {hasRealData ? (
-                <>
-                  <span className="text-emerald-400 font-medium">
-                    ✓ {realDataPoints} real ({realDataPercentage}%)
-                  </span>
-                  {mockDataPoints > 0 && (
-                    <span className="text-amber-400/70">
-                      {mockDataPoints} simulated
-                    </span>
-                  )}
-                  <span className="text-sidebar-foreground/40">
-                    | {totalSnapshots} total in DB
-                  </span>
-                </>
-              ) : (
-                <span className="text-amber-400/70">
-                  ⚠ Using simulated data - sync in progress
-                </span>
-              )}
+              <span className="text-sidebar-foreground/40">
+                {totalSnapshots} total aggregated real data in DB
+              </span>
             </div>
           </div>
           
@@ -168,7 +161,7 @@ export function NetworkTrendsChart() {
 
         <div className="flex-1 -mx-2">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+            <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
               <XAxis 
                 dataKey="timestamp" 
@@ -176,6 +169,22 @@ export function NetworkTrendsChart() {
                 tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10 }}
                 tickLine={{ stroke: 'rgba(255,255,255,0.2)' }}
                 interval="preserveStartEnd"
+                tickFormatter={(value: string, index: number) => {
+                  if (timeRange === "1h") {
+                    return `${index * 4} minute`;
+                  }
+                  // Try to parse as number (timestamp), else fallback to string
+                  if (!isNaN(Number(value))) {
+                    const d = new Date(Number(value));
+                    if (timeRange === "24h") {
+                      return d.toLocaleTimeString([], { hour: '2-digit' });
+                    } else {
+                      return d.toLocaleDateString();
+                    }
+                  }
+                  // If not a number, just return as is (for formatted strings)
+                  return value;
+                }}
               />
               <YAxis 
                 stroke="rgba(255,255,255,0.3)"
