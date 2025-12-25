@@ -313,6 +313,9 @@ export function CountryDistributionChart() {
     health: {},
     credit: {}
   })
+  // Tooltip state for map markers
+  const [hoveredNode, setHoveredNode] = useState<any | null>(null)
+  const [mousePos, setMousePos] = useState<{x: number, y: number}>({x: 0, y: 0})
 
   useEffect(() => {
     async function fetchData() {
@@ -743,9 +746,7 @@ export function CountryDistributionChart() {
                       const countryNodeCount = data[node.country] || 0
                       const maxNodeCount = Math.max(...Object.values(data), 1)
                       const intensity = countryNodeCount / maxNodeCount
-                      
                       let markerColor = 'rgba(34, 197, 94, 0.8)' // Default green
-                      
                       if (mapViewMode === 'storage') {
                         if (intensity > 0.7) {
                           markerColor = 'rgba(239, 68, 68, 0.9)' // Red
@@ -771,16 +772,25 @@ export function CountryDistributionChart() {
                           markerColor = 'rgba(59, 130, 246, 0.8)' // Blue
                         }
                       }
-                      
+                      // Use currentTarget for ownerSVGElement
+                      const handleMouse = (e: React.MouseEvent<SVGGElement, MouseEvent>) => {
+                        setHoveredNode(node)
+                        const svg = e.currentTarget.ownerSVGElement
+                        if (svg) {
+                          const rect = svg.getBoundingClientRect()
+                          setMousePos({
+                            x: e.clientX - rect.left,
+                            y: e.clientY - rect.top
+                          })
+                        }
+                      }
                       return (
                         <Marker key={index} coordinates={[node.longitude, node.latitude]}>
-                          <g>
-                            <title>
-                              {node.city ? `${node.city}, ${node.country}` : node.country}
-                              {node.storageUsed && `\nStorage: ${(node.storageUsed / 1024 / 1024 / 1024).toFixed(2)} GB`}
-                              {node.healthScore && `\nHealth: ${node.healthScore.toFixed(0)}`}
-                              {node.credits && `\nCredits: ${node.credits.toFixed(0)}`}
-                            </title>
+                          <g
+                            onMouseEnter={handleMouse}
+                            onMouseMove={handleMouse}
+                            onMouseLeave={() => setHoveredNode(null)}
+                          >
                             <circle
                               r={2 / zoom}
                               fill={markerColor}
@@ -919,6 +929,47 @@ export function CountryDistributionChart() {
                     })
                 })()}
               </div>
+            {/* Custom Tooltip for Map Markers */}
+            {hoveredNode && (
+              <div
+                style={{
+                  position: 'absolute',
+                  left: mousePos.x + 20,
+                  top: mousePos.y - 10,
+                  zIndex: 9999,
+                  pointerEvents: 'none',
+                  minWidth: 180,
+                  maxWidth: 260
+                }}
+                className="bg-sidebar/95 backdrop-blur-xl border border-white/20 rounded-lg p-3 shadow-xl text-xs text-sidebar-foreground animate-in fade-in-0 zoom-in-95"
+              >
+                <div className="font-semibold text-sm mb-1">
+                  {hoveredNode.city ? `${hoveredNode.city}, ` : ''}{hoveredNode.country || 'Unknown'}
+                </div>
+                <div className="flex flex-col gap-1">
+                  {hoveredNode.storageUsed !== undefined && (
+                    <div>
+                      <span className="font-medium">Storage:</span> {((hoveredNode.storageUsed / 1024) || 0).toFixed(2)} KB
+                    </div>
+                  )}
+                  {hoveredNode.healthScore !== undefined && (
+                    <div>
+                      <span className="font-medium">Health:</span> {hoveredNode.healthScore.toFixed(0)}
+                    </div>
+                  )}
+                  {hoveredNode.credits !== undefined && (
+                    <div>
+                      <span className="font-medium">Credits:</span> {hoveredNode.credits.toFixed(0)}
+                    </div>
+                  )}
+                  {hoveredNode.ip && (
+                    <div>
+                      <span className="font-medium">IP:</span> {hoveredNode.ip}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
             </div>
           </Dialog.Content>
         </Dialog.Portal>
