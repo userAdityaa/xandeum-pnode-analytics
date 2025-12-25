@@ -1,3 +1,12 @@
+// Watched pNodes
+model Watch {
+    id        String   @id @default(cuid())
+    ip        String
+    createdAt DateTime @default(now())
+
+    @@index([ip])
+    @@index([createdAt])
+}
 // This is your Prisma schema file
 
 generator client {

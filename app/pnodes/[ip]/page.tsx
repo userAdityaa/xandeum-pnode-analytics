@@ -229,7 +229,28 @@ export default function NodeDetailsPage() {
             >
               Copy Stats
             </button>
-            <button className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sidebar-foreground/80 hover:bg-white/10 transition-colors">
+            <button
+              className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sidebar-foreground/80 hover:bg-white/10 transition-colors"
+              onClick={async () => {
+                if (node) {
+                  const ip = node.id.split(':')[0];
+                  try {
+                    const res = await fetch('/api/pnodes/watch', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ ip }),
+                    });
+                    if (res.ok) {
+                      showToast(`Pnode with ${ip} has been added to watchlist`);
+                    } else {
+                      showToast('Failed to add to watchlist');
+                    }
+                  } catch {
+                    showToast('Failed to add to watchlist');
+                  }
+                }
+              }}
+            >
               Watch
             </button>
           </div>

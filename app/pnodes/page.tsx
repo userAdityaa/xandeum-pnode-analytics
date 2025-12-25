@@ -43,6 +43,21 @@ function PNodesPage() {
   const [summary, setSummary] = useState<Summary>({ totalKnown: 0, active: 0, inactive: 0 })
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [watchlistIPs, setWatchlistIPs] = useState<string[]>([])
+    // Fetch watchlist IPs
+    useEffect(() => {
+      console.log("how many times is it being called.")
+      async function fetchWatchlist() {
+        try {
+          const res = await fetch('/api/pnodes/watch', { cache: 'no-store' })
+          const data = await res.json()
+          setWatchlistIPs(data.watchlist?.map((w: { ip: string }) => w.ip) || [])
+        } catch (e) {
+          setWatchlistIPs([])
+        }
+      }
+      fetchWatchlist()
+    }, [])
   const [versionFilter, setVersionFilter] = useState<string>("all")
   const [sortColumn, setSortColumn] = useState<string>("lastSeen")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
@@ -133,6 +148,7 @@ function PNodesPage() {
       if (statusFilter === "offline") return node.status === "inactive"
       if (statusFilter === "public") return node.isPublic === true
       if (statusFilter === "private") return node.isPublic === false
+      if (statusFilter === "watchlist") return watchlistIPs.includes(node.id.split(':')[0])
       return true
     })
     .filter(node => {
@@ -275,6 +291,7 @@ function PNodesPage() {
               <option value="offline">Offline</option>
               <option value="public">Public</option>
               <option value="private">Private</option>
+              <option value="watchlist">Watchlist</option>
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-sidebar-foreground/40 pointer-events-none" />
           </div>
