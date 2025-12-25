@@ -18,8 +18,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Xandeum Analytics",
-  description: "Xandeum Network Analytics Dashboard",
+  title: "Xandeum Analytics - Real-Time Network Insights",
+  description:
+    "Xandeum Analytics is a comprehensive analytics and monitoring platform for the Xandeum decentralized storage network. It provides node operators, developers, and the community with actionable insights into network health, performance, and distribution. Features include real-time and historical data visualization, node and network health monitoring, risk assessment, resource tracking, interactive maps, and data export in CSV/JSON formats. The platform aggregates and analyzes data from hundreds of pNodes, offering transparent, up-to-date, and in-depth views of network activity and trends. Built with Next.js and React, Xandeum Analytics empowers users with intuitive dashboards, custom visualizations, and open API access for integration and research.",
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({

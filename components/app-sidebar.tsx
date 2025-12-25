@@ -53,8 +53,15 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground justify-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2">
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-linear-to-br from-blue-500 to-purple-600 text-white shrink-0">
-                <span className="text-lg font-bold">X</span>
+              <div className="flex aspect-square size-12 items-center justify-center shrink-0 overflow-hidden p-0">
+                <img
+                  src="/logo.png"
+                  alt="App Logo"
+                  className="object-contain w-12 h-12 scale-150"
+                  width={120}
+                  height={120}
+                  style={{ display: 'block' }}
+                />
               </div>
               <div className="grid flex-1 text-start text-sm leading-tight group-data-[collapsible=icon]:hidden">
                 <span className="truncate font-semibold">Xandeum Analytics</span>
