@@ -125,10 +125,21 @@ export function AppSidebar() {
               >
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
-                    <SidebarMenuButton tooltip="Documentation" isActive={pathname?.startsWith("/docs")}> 
-                      <BookOpen />
-                      <span>Documentation</span>
-                      <ChevronDown className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />
+                    <SidebarMenuButton 
+                      asChild
+                      tooltip="Documentation" 
+                      isActive={pathname?.startsWith("/docs")}
+                      onClick={e => {
+                        if (!pathname?.startsWith("/docs/about")) {
+                          window.location.href = "/docs/about";
+                        }
+                      }}
+                    >
+                      <a href="#">
+                        <BookOpen />
+                        <span>Documentation</span>
+                        <ChevronDown className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />
+                      </a>
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
                   <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
