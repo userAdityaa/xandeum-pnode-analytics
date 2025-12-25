@@ -44,6 +44,8 @@ interface NodeDetails {
   totalNodes?: number
 }
 
+type IP = string | undefined;
+
 export default function NodeDetailsPage() {
     const { showToast } = useToast();
   const params = useParams()
@@ -54,6 +56,36 @@ export default function NodeDetailsPage() {
   const [creditRank, setCreditRank] = useState<number>(0)
   const [totalNodes, setTotalNodes] = useState<number>(0)
   const [performancePercentile, setPerformancePercentile] = useState<number>(0)
+  const [watchlistIPs, setWatchlistIPs] = useState<string[]>([])
+
+  // Load watchlist from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem('pnodes_watchlist')
+    if (stored) {
+      try {
+        setWatchlistIPs(JSON.parse(stored))
+      } catch {
+        setWatchlistIPs([])
+      }
+    }
+  }, [])
+
+  const ip: IP = node?.id.split(':')[0]
+  const isWatched = watchlistIPs.includes(ip!)
+
+  const toggleWatchlist = () => {
+    if (!ip) return
+    let updated: string[]
+    if (isWatched) {
+      updated = watchlistIPs.filter(wip => wip !== ip)
+      showToast(`Removed ${ip} from watchlist`)
+    } else {
+      updated = [...watchlistIPs, ip]
+      showToast(`Added ${ip} to watchlist`)
+    }
+    setWatchlistIPs(updated)
+    localStorage.setItem('pnodes_watchlist', JSON.stringify(updated))
+  }
 
   useEffect(() => {
     const fetchNodeDetails = async () => {
@@ -230,28 +262,11 @@ export default function NodeDetailsPage() {
               Copy Stats
             </button>
             <button
-              className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sidebar-foreground/80 hover:bg-white/10 transition-colors"
-              onClick={async () => {
-                if (node) {
-                  const ip = node.id.split(':')[0];
-                  try {
-                    const res = await fetch('/api/pnodes/watch', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ ip }),
-                    });
-                    if (res.ok) {
-                      showToast(`Pnode with ${ip} has been added to watchlist`);
-                    } else {
-                      showToast('Failed to add to watchlist');
-                    }
-                  } catch {
-                    showToast('Failed to add to watchlist');
-                  }
-                }
-              }}
+              className={`px-4 py-2 rounded-lg border border-white/10 transition-colors ${isWatched ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-sidebar-foreground/80 hover:bg-white/10'}`}
+              onClick={toggleWatchlist}
+              title={isWatched ? 'Remove from Watchlist' : 'Add to Watchlist'}
             >
-              Watch
+              {isWatched ? '★ Watched' : '☆ Watch'}
             </button>
           </div>
         </div>

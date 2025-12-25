@@ -44,20 +44,17 @@ function PNodesPage() {
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [watchlistIPs, setWatchlistIPs] = useState<string[]>([])
-    // Fetch watchlist IPs
-    useEffect(() => {
-      console.log("how many times is it being called.")
-      async function fetchWatchlist() {
-        try {
-          const res = await fetch('/api/pnodes/watch', { cache: 'no-store' })
-          const data = await res.json()
-          setWatchlistIPs(data.watchlist?.map((w: { ip: string }) => w.ip) || [])
-        } catch (e) {
-          setWatchlistIPs([])
-        }
+  // Load watchlist from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem('pnodes_watchlist')
+    if (stored) {
+      try {
+        setWatchlistIPs(JSON.parse(stored))
+      } catch {
+        setWatchlistIPs([])
       }
-      fetchWatchlist()
-    }, [])
+    }
+  }, [])
   const [versionFilter, setVersionFilter] = useState<string>("all")
   const [sortColumn, setSortColumn] = useState<string>("lastSeen")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
@@ -159,16 +156,26 @@ function PNodesPage() {
     .sort((a, b) => {
       let aVal: any = a[sortColumn as keyof Node]
       let bVal: any = b[sortColumn as keyof Node]
-
       if (aVal === undefined) aVal = sortDirection === "asc" ? Infinity : -Infinity
       if (bVal === undefined) bVal = sortDirection === "asc" ? Infinity : -Infinity
-
       if (sortDirection === "asc") {
         return aVal > bVal ? 1 : -1
       } else {
         return aVal < bVal ? 1 : -1
       }
     })
+
+  // Add/remove IP to watchlist
+  const toggleWatchlist = (ip: string) => {
+    let updated: string[]
+    if (watchlistIPs.includes(ip)) {
+      updated = watchlistIPs.filter(wip => wip !== ip)
+    } else {
+      updated = [...watchlistIPs, ip]
+    }
+    setWatchlistIPs(updated)
+    localStorage.setItem('pnodes_watchlist', JSON.stringify(updated))
+  }
 
   const handleSort = (column: string) => {
     if (sortColumn === column) {
@@ -362,30 +369,39 @@ function PNodesPage() {
               </tr>
             </thead>
             <tbody>
-              {paginatedNodes.map((node) => (
-                <tr key={node.id} className="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer" onClick={() => window.location.href = `/pnodes/${node.id.split(':')[0]}`}>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${node.isPublic ? 'bg-green-500' : 'bg-yellow-500'}`} />
-                      <span className="text-xs text-sidebar-foreground/70">
-                        Online ({node.isPublic ? 'Public' : 'Private'})
-                      </span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="text-sm font-mono text-sidebar-foreground/80">
-                      {node.id.split(':')[0]}
-                    </span>
-                    <span className="text-sm text-sidebar-foreground/40">:{node.id.split(':')[1]}</span>
-                  </td>
-                  <td className="py-3 px-4 text-sm text-sidebar-foreground/70">{node.version}</td>
-                  <td className="py-3 px-4 text-sm text-green-400">{formatPercent(node.cpuPercent)}</td>
-                  <td className="py-3 px-4 text-sm text-green-400">{formatRamPercent(node.ramUsedBytes, node.ramTotalBytes)}</td>
-                  <td className="py-3 px-4 text-sm text-green-400">{formatBytes(node.storageUsed)}</td>
-                  <td className="py-3 px-4 text-sm text-sidebar-foreground/70">{formatUptime(node.uptimeSeconds)}</td>
-                  <td className="py-3 px-4 text-sm text-sidebar-foreground/60">{formatTimeAgo(node.lastSeen)}</td>
-                </tr>
-              ))}
+              {paginatedNodes.map((node) => {
+                const ip = node.id.split(':')[0]
+                const isWatched = watchlistIPs.includes(ip)
+                return (
+                  <tr key={node.id} className="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer">
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${node.isPublic ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                        <span className="text-xs text-sidebar-foreground/70">
+                          Online ({node.isPublic ? 'Public' : 'Private'})
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 flex items-center gap-2">
+                      <span className="text-sm font-mono text-sidebar-foreground/80 cursor-pointer" onClick={() => window.location.href = `/pnodes/${ip}`}>{ip}</span>
+                      <span className="text-sm text-sidebar-foreground/40">:{node.id.split(':')[1]}</span>
+                      <button
+                        onClick={() => toggleWatchlist(ip)}
+                        className={`ml-2 px-2 py-0.5 rounded text-xs ${isWatched ? 'bg-blue-500/20 text-blue-400' : 'bg-white/10 text-sidebar-foreground/40'} border border-white/10 hover:bg-blue-500/30`}
+                        title={isWatched ? 'Remove from Watchlist' : 'Add to Watchlist'}
+                      >
+                        {isWatched ? '★' : '☆'}
+                      </button>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-sidebar-foreground/70">{node.version}</td>
+                    <td className="py-3 px-4 text-sm text-green-400">{formatPercent(node.cpuPercent)}</td>
+                    <td className="py-3 px-4 text-sm text-green-400">{formatRamPercent(node.ramUsedBytes, node.ramTotalBytes)}</td>
+                    <td className="py-3 px-4 text-sm text-green-400">{formatBytes(node.storageUsed)}</td>
+                    <td className="py-3 px-4 text-sm text-sidebar-foreground/70">{formatUptime(node.uptimeSeconds)}</td>
+                    <td className="py-3 px-4 text-sm text-sidebar-foreground/60">{formatTimeAgo(node.lastSeen)}</td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
