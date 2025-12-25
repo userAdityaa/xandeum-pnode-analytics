@@ -52,7 +52,7 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-sidebar-border relative">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground justify-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2">
+              <SidebarMenuButton size="lg" className={`data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground justify-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2 ${state === "collapsed" ? "ml-4" : ""}`}>
               <div className="flex aspect-square size-12 items-center justify-center shrink-0 overflow-hidden p-0">
                 <img
                   src="/logo.png"
@@ -89,7 +89,12 @@ export function AppSidebar() {
             <SidebarMenu>
               {navigation.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === item.href}
+                    tooltip={item.title}
+                    className={`${state === "collapsed" ? "ml-4 mt-4" : ""}`}
+                  >
                     <a href={item.href}>
                       <item.icon />
                       <span>{item.title}</span>
@@ -101,13 +106,19 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {state === "collapsed" && <div className="my-2 border-t border-sidebar-border mx-2" />}
         <SidebarGroup>
           <SidebarGroupLabel>{pNodesSection.title}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {pNodesSection.items.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={pathname === item.href || pathname?.startsWith(item.href + '/')} tooltip={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === item.href || pathname?.startsWith(item.href + '/')}
+                    tooltip={item.title}
+                    className={`${state === "collapsed" ? "ml-4" : ""}`}
+                  >
                     <a href={item.href}>
                       <item.icon />
                       <span>{item.title}</span>
@@ -119,6 +130,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {state === "collapsed" && <div className="my-2 border-t border-sidebar-border mx-2" />}
         <SidebarGroup>
           <SidebarGroupLabel>{resourcesSection.title}</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -141,6 +153,7 @@ export function AppSidebar() {
                           window.location.href = "/docs/about";
                         }
                       }}
+                      className={`${state === "collapsed" ? "ml-4" : ""}`}
                     >
                       <a href="#">
                         <BookOpen />
