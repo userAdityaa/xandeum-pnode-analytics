@@ -210,17 +210,6 @@ export default function NodeDetailsPage() {
         transition: "margin-left 300ms ease-in-out"
       }}
     >
-      {/* Breadcrumb */}
-      <div className="mb-6 flex items-center gap-2 text-sm text-sidebar-foreground/60">
-        <span>Home</span>
-        <span>&gt;</span>
-        <span>Dashboard</span>
-        <span>&gt;</span>
-        <span>Nodes</span>
-        <span>&gt;</span>
-        <span className="text-sidebar-foreground">{node.id.split(':')[0]}</span>
-      </div>
-
       {/* Header */}
       <div className="mb-6 bg-linear-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
         <div className="flex items-start justify-between">

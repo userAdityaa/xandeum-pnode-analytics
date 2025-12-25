@@ -233,15 +233,6 @@ function PNodesPage() {
         transition: "margin-left 300ms ease-in-out"
       }}
     >
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-sidebar-foreground/60">
-        <span>Home</span>
-        <span>›</span>
-        <span>Dashboard</span>
-        <span>›</span>
-        <span className="text-sidebar-foreground">All Nodes</span>
-      </div>
-
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="rounded-xl bg-sidebar/60 backdrop-blur-xl p-6 border border-white/10">
