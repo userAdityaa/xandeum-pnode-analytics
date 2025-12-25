@@ -6,6 +6,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import Navbar from "@/components/navbar";
 import { RefreshProvider } from "@/lib/refresh-context";
 import { HealthSyncInitializer } from "@/components/health-sync-initializer";
+import { ToastProvider } from "@/components/ui/toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,26 +34,29 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <html lang="en" className="dark">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <RefreshProvider>
-          <HealthSyncInitializer />
-          <SidebarProvider defaultOpen>
-            <div className="flex min-h-screen w-full">
-              <AppSidebar />
-              <SidebarInset className="flex flex-col flex-1">
-                <Navbar />
-                <main className="flex-1 overflow-auto">
-                  {children}
-                </main>
-              </SidebarInset>
-            </div>
-          </SidebarProvider>
-        </RefreshProvider>
-      </body>
-    </html>
-  );
+    return (
+      <html lang="en" className="dark">
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        >
+          <RefreshProvider>
+            <HealthSyncInitializer />
+            <SidebarProvider defaultOpen>
+              <div className="flex min-h-screen w-full">
+                <AppSidebar />
+                <SidebarInset className="flex flex-col flex-1">
+                  <Navbar />
+                  {/* ToastProvider wraps the app for global toasts */}
+                  <ToastProvider>
+                    <main className="flex-1 overflow-auto">
+                      {children}
+                    </main>
+                  </ToastProvider>
+                </SidebarInset>
+              </div>
+            </SidebarProvider>
+          </RefreshProvider>
+        </body>
+      </html>
+    );
 }

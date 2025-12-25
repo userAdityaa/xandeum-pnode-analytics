@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { copyToClipboard } from '@/lib/utils'
+import { useToast } from '@/components/ui/toast'
 import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Globe, TrendingUp, Activity, Network as NetworkIcon } from 'lucide-react'
 import { useSidebar } from '@/components/ui/sidebar'
@@ -43,6 +45,7 @@ interface NodeDetails {
 }
 
 export default function NodeDetailsPage() {
+    const { showToast } = useToast();
   const params = useParams()
   const router = useRouter()
   const { state } = useSidebar()
@@ -215,10 +218,15 @@ export default function NodeDetailsPage() {
               <ArrowLeft className="w-4 h-4" />
               Back
             </button>
-            <button className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sidebar-foreground/80 hover:bg-white/10 transition-colors">
-              Share
-            </button>
-            <button className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sidebar-foreground/80 hover:bg-white/10 transition-colors">
+            <button
+              className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sidebar-foreground/80 hover:bg-white/10 transition-colors"
+              onClick={async () => {
+                if (node) {
+                  await copyToClipboard(node.id.split(':')[0]);
+                  showToast(`Copied IP: ${node.id.split(':')[0]}`);
+                }
+              }}
+            >
               Copy Stats
             </button>
             <button className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sidebar-foreground/80 hover:bg-white/10 transition-colors">
