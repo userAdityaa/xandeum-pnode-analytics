@@ -1,6 +1,6 @@
 import axios from "axios";
-import { callPRPCWithFallback } from "./prpc/client";
-import prisma from './prisma';
+import { callPRPCWithFallback } from "../app/lib/prpc/client";
+import prisma from '../app/lib/prisma';
 
 export interface NodeStats {
   address: string;

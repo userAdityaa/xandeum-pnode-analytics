@@ -105,12 +105,12 @@ export function StorageOverviewCard() {
           <div className="h-8 bg-white/5 rounded-lg overflow-hidden flex">
             {/* Used Storage */}
             <div 
-              className="bg-gradient-to-r from-pink-500 to-pink-400 transition-all duration-500"
+              className="bg-linear-to-r from-pink-500 to-pink-400 transition-all duration-500"
               style={{ width: `${usagePercentage}%` }}
             />
             {/* Available Storage */}
             <div 
-              className="bg-gradient-to-r from-emerald-500/40 to-emerald-400/40 transition-all duration-500"
+              className="bg-linear-to-r from-emerald-500/40 to-emerald-400/40 transition-all duration-500"
               style={{ width: `${100 - usagePercentage}%` }}
             />
           </div>
@@ -120,7 +120,7 @@ export function StorageOverviewCard() {
         <div className="space-y-2 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-gradient-to-r from-pink-500 to-pink-400" />
+              <div className="w-3 h-3 rounded-full bg-linear-to-r from-pink-500 to-pink-400" />
               <span className="text-xs text-sidebar-foreground/80">Used Storage</span>
             </div>
             <span className="text-xs font-semibold text-sidebar-foreground">
@@ -129,7 +129,7 @@ export function StorageOverviewCard() {
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-gradient-to-r from-emerald-500/40 to-emerald-400/40" />
+              <div className="w-3 h-3 rounded-full bg-linear-to-r from-emerald-500/40 to-emerald-400/40" />
               <span className="text-xs text-sidebar-foreground/80">Available Storage</span>
             </div>
             <span className="text-xs font-semibold text-sidebar-foreground">

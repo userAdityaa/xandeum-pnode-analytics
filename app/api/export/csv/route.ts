@@ -63,7 +63,7 @@ export async function GET() {
 		'address', 'ip', 'port', 'pubkey', 'version', 'status', 'isOnline', 'hasPublicRpc', 'uptime', 'country', 'city', 'lastSeen'
 	];
 	let csv = nodeHeaders.join(',') + '\n';
-	csv += nodeRows.map(row => nodeHeaders.map(h => JSON.stringify(row[h] ?? '')).join(',')).join('\n');
+	csv += nodeRows.map((row: Record<string, any>) => nodeHeaders.map(h => JSON.stringify(row[h] ?? '')).join(',')).join('\n');
 
 	// Optionally, add a blank line and then summary sections for health, risk, stats
 	csv += '\n\nHEALTH\n' + toCSV(health);

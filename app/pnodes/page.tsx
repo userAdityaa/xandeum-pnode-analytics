@@ -1,6 +1,7 @@
+
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Search, ChevronDown } from "lucide-react"
 import { useSidebar } from "@/components/ui/sidebar"
@@ -26,7 +27,15 @@ interface Summary {
   inactive: number
 }
 
-export default function PNodesPage() {
+export default function PNodesPageWrapper() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PNodesPage />
+    </Suspense>
+  )
+}
+
+function PNodesPage() {
   const { state } = useSidebar()
   const searchParams = useSearchParams()
   const router = useRouter()

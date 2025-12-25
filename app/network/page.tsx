@@ -41,6 +41,8 @@ interface PNodesData {
     privateNodes: number
     active: number
     inactive: number
+    networkStorageTotal?: number
+    aggregateStorageUsed?: number
   }
   pNodes: Array<any>
 }
@@ -206,7 +208,7 @@ export default function NetworkPage() {
           {/* Key Metrics Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Network Health */}
-            <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 backdrop-blur-2xl border border-emerald-500/20 rounded-lg p-5">
+            <div className="bg-linear-to-br from-emerald-500/10 to-emerald-500/5 backdrop-blur-2xl border border-emerald-500/20 rounded-lg p-5">
               <div className="flex items-center justify-between mb-3">
                 <Activity className="w-5 h-5 text-emerald-400" />
                 <span className="text-xs text-emerald-400 font-medium">
@@ -226,7 +228,7 @@ export default function NetworkPage() {
             </div>
 
             {/* Active Nodes */}
-            <div className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 backdrop-blur-2xl border border-blue-500/20 rounded-lg p-5">
+            <div className="bg-linear-to-br from-blue-500/10 to-blue-500/5 backdrop-blur-2xl border border-blue-500/20 rounded-lg p-5">
               <div className="flex items-center justify-between mb-3">
                 <Server className="w-5 h-5 text-blue-400" />
                 <span className="text-xs text-blue-400 font-medium">
@@ -246,7 +248,7 @@ export default function NetworkPage() {
             </div>
 
             {/* Network Traffic */}
-            <div className="bg-gradient-to-br from-purple-500/10 to-purple-500/5 backdrop-blur-2xl border border-purple-500/20 rounded-lg p-5">
+            <div className="bg-linear-to-br from-purple-500/10 to-purple-500/5 backdrop-blur-2xl border border-purple-500/20 rounded-lg p-5">
               <div className="flex items-center justify-between mb-3">
                 <Zap className="w-5 h-5 text-purple-400" />
                 <span className="text-xs text-purple-400 font-medium">
@@ -273,21 +275,29 @@ export default function NetworkPage() {
             </div>
 
             {/* Storage Capacity */}
-            <div className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 backdrop-blur-2xl border border-amber-500/20 rounded-lg p-5">
+            <div className="bg-linear-to-br from-amber-500/10 to-amber-500/5 backdrop-blur-2xl border border-amber-500/20 rounded-lg p-5">
               <div className="flex items-center justify-between mb-3">
                 <Database className="w-5 h-5 text-amber-400" />
                 <span className="text-xs text-amber-400 font-medium">
-                  {(pNodesData.summary.networkStorageTotal / (1024**4)).toFixed(1)} TB
+                  {((pNodesData.summary.networkStorageTotal ?? 0) / (1024**4)).toFixed(1)} TB
                 </span>
               </div>
               <div className="text-3xl font-bold text-amber-400 mb-1">
-                {((pNodesData.summary.aggregateStorageUsed / pNodesData.summary.networkStorageTotal) * 100).toFixed(1)}%
+                {(
+                  ((pNodesData.summary.aggregateStorageUsed ?? 0) && (pNodesData.summary.networkStorageTotal ?? 0))
+                    ? ((pNodesData.summary.aggregateStorageUsed ?? 0) / (pNodesData.summary.networkStorageTotal ?? 1)) * 100
+                    : 0
+                ).toFixed(1)}%
               </div>
               <div className="text-xs text-sidebar-foreground/70">Storage Used</div>
               <div className="mt-3 h-1 bg-white/10 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-amber-400"
-                  style={{ width: `${(pNodesData.summary.aggregateStorageUsed / pNodesData.summary.networkStorageTotal) * 100}%` }}
+                  style={{ width: `${
+                    ((pNodesData.summary.aggregateStorageUsed ?? 0) && (pNodesData.summary.networkStorageTotal ?? 0))
+                      ? ((pNodesData.summary.aggregateStorageUsed ?? 0) / (pNodesData.summary.networkStorageTotal ?? 1)) * 100
+                      : 0
+                  }%` }}
                 />
               </div>
             </div>
@@ -296,7 +306,7 @@ export default function NetworkPage() {
           {/* Charts Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Node Performance Distribution */}
-            <div className="lg:col-span-2 bg-gradient-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6">
+            <div className="lg:col-span-2 bg-linear-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-sidebar-foreground">Node Performance Distribution</h3>
                 <Globe className="w-5 h-5 text-blue-400" />
@@ -339,7 +349,7 @@ export default function NetworkPage() {
                     <YAxis type="category" dataKey="name" stroke="rgba(255,255,255,0.3)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 11 }} width={80} />
                     <Tooltip 
                       contentStyle={{ backgroundColor: 'rgba(0,0,0,0.9)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }}
-                      formatter={(value: any, name: string) => [`${Number(value).toFixed(1)}%`, name]}
+                      formatter={(value: any, name?: string) => [`${Number(value).toFixed(1)}%`, name ?? '']}
                     />
                     <Bar dataKey="avg" fill="#3b82f6" radius={[0, 4, 4, 0]} />
                   </BarChart>
@@ -348,7 +358,7 @@ export default function NetworkPage() {
             </div>
 
             {/* Network Status Radar */}
-            <div className="bg-gradient-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6">
+            <div className="bg-linear-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6">
               <h3 className="text-lg font-semibold text-sidebar-foreground mb-4">Network Metrics</h3>
               
               <div className="h-72">
@@ -371,7 +381,7 @@ export default function NetworkPage() {
             </div>
 
             {/* Resource Utilization Trend */}
-            <div className="lg:col-span-2 bg-gradient-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6">
+            <div className="lg:col-span-2 bg-linear-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6">
               <h3 className="text-lg font-semibold text-sidebar-foreground mb-4">Top Nodes by Performance</h3>
               
               <div className="h-72">
@@ -406,7 +416,7 @@ export default function NetworkPage() {
             </div>
 
             {/* Node Type & Status Breakdown */}
-            <div className="bg-gradient-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6">
+            <div className="bg-linear-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6">
               <h3 className="text-lg font-semibold text-sidebar-foreground mb-4">Node Breakdown</h3>
               
               <div className="space-y-4">
@@ -499,7 +509,7 @@ export default function NetworkPage() {
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* CPU Summary Card */}
-            <div className="bg-gradient-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
+            <div className="bg-linear-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
               <div className="flex items-center gap-2 mb-4">
                 <Cpu className="w-5 h-5 text-purple-400" />
                 <h3 className="text-sm font-semibold text-sidebar-foreground">CPU Usage</h3>
@@ -511,7 +521,7 @@ export default function NetworkPage() {
             </div>
 
             {/* RAM Summary Card */}
-            <div className="bg-gradient-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
+            <div className="bg-linear-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
               <div className="flex items-center gap-2 mb-4">
                 <MemoryStick className="w-5 h-5 text-green-400" />
                 <h3 className="text-sm font-semibold text-sidebar-foreground">RAM Usage</h3>
@@ -523,7 +533,7 @@ export default function NetworkPage() {
             </div>
 
             {/* Network Traffic Summary Card */}
-            <div className="bg-gradient-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
+            <div className="bg-linear-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
               <div className="flex items-center gap-2 mb-4">
                 <NetworkIcon className="w-5 h-5 text-blue-400" />
                 <h3 className="text-sm font-semibold text-sidebar-foreground">Network Traffic</h3>
@@ -535,7 +545,7 @@ export default function NetworkPage() {
             </div>
 
             {/* Active Streams Summary Card */}
-            <div className="bg-gradient-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
+            <div className="bg-linear-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
               <div className="flex items-center gap-2 mb-4">
                 <Activity className="w-5 h-5 text-orange-400" />
                 <h3 className="text-sm font-semibold text-sidebar-foreground">Active Streams</h3>
@@ -550,7 +560,7 @@ export default function NetworkPage() {
           {/* Charts Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* CPU Usage Chart */}
-            <div className="bg-gradient-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
+            <div className="bg-linear-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Cpu className="w-5 h-5 text-purple-400" />
@@ -613,7 +623,7 @@ export default function NetworkPage() {
             </div>
 
             {/* RAM Usage Chart */}
-            <div className="bg-gradient-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
+            <div className="bg-linear-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <MemoryStick className="w-5 h-5 text-green-400" />
@@ -679,7 +689,7 @@ export default function NetworkPage() {
           {/* Bottom Grid - Network Traffic & Active Streams */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Network Traffic Chart */}
-            <div className="bg-gradient-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
+            <div className="bg-linear-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <NetworkIcon className="w-5 h-5 text-blue-400" />
@@ -750,7 +760,7 @@ export default function NetworkPage() {
             </div>
 
             {/* Active Streams Chart */}
-            <div className="bg-gradient-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
+            <div className="bg-linear-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Activity className="w-5 h-5 text-orange-400" />

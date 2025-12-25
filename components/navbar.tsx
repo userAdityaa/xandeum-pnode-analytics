@@ -62,7 +62,7 @@ export default function Navbar() {
               <ChevronDown className="h-4 w-4" />
             </Button>
           </Popover.Trigger>
-          <Popover.Content align="end" className="z-50 bg-sidebar border border-sidebar-border rounded shadow-lg p-2 min-w-[120px]">
+          <Popover.Content align="end" className="z-50 bg-sidebar border border-sidebar-border rounded shadow-lg p-2 min-w-30">
             <button
               className="w-full text-left px-3 py-2 hover:bg-sidebar-accent rounded"
               onClick={async () => {
@@ -80,7 +80,7 @@ export default function Navbar() {
           </Popover.Content>
         </Popover.Root>
               {downloading && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40">
+                <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/40">
                   <div className="flex flex-col items-center gap-2 p-6 bg-sidebar border border-sidebar-border rounded-xl shadow-xl">
                     <svg className="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

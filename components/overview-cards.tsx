@@ -176,13 +176,13 @@ export function OverviewCards() {
           }}
         >
           {/* Top highlight edge */}
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+          <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-white/40 to-transparent" />
           
           {/* Bottom shadow edge */}
-          <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-t from-black/30 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 h-2 bg-linear-to-t from-black/30 to-transparent" />
           
           {/* 3D depth layer */}
-          <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-black/30" />
+          <div className="absolute inset-0 bg-linear-to-b from-white/10 via-transparent to-black/30" />
           
           {/* Glass reflection effect */}
           <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />

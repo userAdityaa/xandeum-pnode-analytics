@@ -9,13 +9,14 @@ import dynamic from 'next/dynamic'
 const NodeMap = dynamic(() => import('@/components/node-map').then(mod => ({ default: mod.NodeMap })), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-800/30 to-slate-900/30 rounded-xl">
+    <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-slate-800/30 to-slate-900/30 rounded-xl">
       <div className="text-sidebar-foreground/40">Loading map...</div>
     </div>
   )
 })
 
 interface NodeDetails {
+  id: string
   ip: string
   port: number
   pubkey: string
@@ -186,10 +187,10 @@ export default function NodeDetailsPage() {
       </div>
 
       {/* Header */}
-      <div className="mb-6 bg-gradient-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
+      <div className="mb-6 bg-linear-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 rounded-lg bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
               <NetworkIcon className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -230,7 +231,7 @@ export default function NodeDetailsPage() {
       {/* Main Content Grid */}
       <div className="grid grid-cols-2 gap-6">
         {/* Node Location */}
-        <div className="bg-gradient-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
+        <div className="bg-linear-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
           <h2 className="text-lg font-semibold text-sidebar-foreground mb-4">Node Location</h2>
           
           {/* Map */}
@@ -244,7 +245,7 @@ export default function NodeDetailsPage() {
                 ip={node.id.split(':')[0]}
               />
             ) : (
-              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-800/30 to-slate-900/30 text-sidebar-foreground/40">
+              <div className="absolute inset-0 flex items-center justify-center bg-linear-to-br from-slate-800/30 to-slate-900/30 text-sidebar-foreground/40">
                 Location data unavailable
               </div>
             )}
@@ -262,7 +263,7 @@ export default function NodeDetailsPage() {
         </div>
 
         {/* System Performance */}
-        <div className="bg-gradient-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
+        <div className="bg-linear-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
           <div className="flex items-center gap-2 mb-4">
             <Activity className="w-5 h-5 text-blue-400" />
             <h2 className="text-lg font-semibold text-sidebar-foreground">System Performance</h2>
@@ -276,7 +277,7 @@ export default function NodeDetailsPage() {
             </div>
             <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
               <div 
-                className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all"
+                className="h-full bg-linear-to-r from-blue-500 to-cyan-400 rounded-full transition-all"
                 style={{ width: `${Math.min(node.cpuPercent || 0, 100)}%` }}
               ></div>
             </div>
@@ -293,7 +294,7 @@ export default function NodeDetailsPage() {
             <div className="text-xs text-sidebar-foreground/50 mb-2">{ramUsedPercent}% Used</div>
             <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
               <div 
-                className="h-full bg-gradient-to-r from-purple-500 to-pink-400 rounded-full transition-all"
+                className="h-full bg-linear-to-r from-purple-500 to-pink-400 rounded-full transition-all"
                 style={{ width: `${ramUsedPercent}%` }}
               ></div>
             </div>
@@ -315,7 +316,7 @@ export default function NodeDetailsPage() {
             </div>
             <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
               <div 
-                className="h-full bg-gradient-to-r from-green-500 to-emerald-400 rounded-full transition-all"
+                className="h-full bg-linear-to-r from-green-500 to-emerald-400 rounded-full transition-all"
                 style={{ width: `${storageUsedPercent}%` }}
               ></div>
             </div>
@@ -323,7 +324,7 @@ export default function NodeDetailsPage() {
         </div>
 
         {/* Location & Identity */}
-        <div className="bg-gradient-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
+        <div className="bg-linear-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
           <div className="flex items-center gap-2 mb-6">
             <Globe className="w-5 h-5 text-blue-400" />
             <h2 className="text-lg font-semibold text-sidebar-foreground">Location & Identity</h2>
@@ -375,7 +376,7 @@ export default function NodeDetailsPage() {
         </div>
 
         {/* Credit Score */}
-        <div className="bg-gradient-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
+        <div className="bg-linear-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
           <div className="flex items-center gap-2 mb-6">
             <TrendingUp className="w-5 h-5 text-blue-400" />
             <h2 className="text-lg font-semibold text-sidebar-foreground">Credit Score</h2>
@@ -419,7 +420,7 @@ export default function NodeDetailsPage() {
         </div>
 
         {/* Network Traffic */}
-        <div className="col-span-2 bg-gradient-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
+        <div className="col-span-2 bg-linear-to-br from-white/8 to-white/3 backdrop-blur-2xl border border-white/10 rounded-lg p-6 shadow-xl">
           <div className="flex items-center gap-2 mb-6">
             <NetworkIcon className="w-5 h-5 text-blue-400" />
             <h2 className="text-lg font-semibold text-sidebar-foreground">Network Traffic</h2>

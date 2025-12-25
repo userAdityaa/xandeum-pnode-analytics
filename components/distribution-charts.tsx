@@ -426,26 +426,6 @@ export function CountryDistributionChart() {
         transform: 'perspective(1000px) rotateX(2deg)',
       }}
     >
-      {/* Top highlight edge */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-white/40 to-transparent" />
-      
-      {/* Bottom shadow edge */}
-      <div className="absolute bottom-0 left-0 right-0 h-2 bg-linear-to-t from-black/30 to-transparent" />
-      
-      {/* 3D depth layer */}
-      <div className="absolute inset-0 bg-linear-to-b from-white/10 via-transparent to-black/30" />
-      
-      {/* Glass reflection effect */}
-      <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      
-      {/* Gradient background */}
-      <div className="absolute inset-0 bg-linear-to-br from-blue-500/40 via-cyan-500/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-500" />
-      
-      {/* Elevated border glow */}
-      <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{
-        boxShadow: 'inset 0 0 30px rgba(59, 130, 246, 0.4), 0 0 40px rgba(59, 130, 246, 0.3)'
-      }} />
-
       <div className="relative z-10 h-full flex flex-col">
         <div className="mb-3 flex items-start justify-between">
           <div>
@@ -527,14 +507,14 @@ export function CountryDistributionChart() {
               const percentage = totalCountries > 0 ? (item.value / totalCountries) * 100 : 0
               const maxValue = countryData[0]?.value || 1
               const widthPercentage = (item.value / maxValue) * 100
-              const isSelected = selectedCountry?.name === item.name
+              const isSelected = (selectedCountry as DistributionItem | null)?.name === item.name
               
               return (
                 <div key={index}>
                   <div 
                     className="flex items-center gap-2 cursor-pointer hover:bg-white/5 rounded px-1 py-0.5 transition-all"
                     onClick={() => {
-                      if (selectedCountry?.name === item.name) {
+                      if ((selectedCountry as DistributionItem | null)?.name === item.name) {
                         setSelectedCountry(null)
                       } else {
                         setSelectedCountry(item)
@@ -574,15 +554,13 @@ export function CountryDistributionChart() {
         )}
       </div>
       
-      {/* Map View Dialog */}
-      {console.log('Rendering Dialog, showMapView:', showMapView)}
       <Dialog.Root open={showMapView} onOpenChange={setShowMapView}>
         <Dialog.Portal container={typeof document !== 'undefined' ? document.body : undefined}>
-          <Dialog.Overlay className="fixed inset-0 bg-black/70 backdrop-blur-md z-[100] animate-in fade-in" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] w-[95vw] max-w-6xl max-h-[90vh] overflow-hidden rounded-lg bg-slate-900/95 backdrop-blur-lg border-2 border-white/20 shadow-2xl animate-in fade-in zoom-in-95 relative">
+          <Dialog.Overlay className="fixed inset-0 bg-black/70 backdrop-blur-md z-100 animate-in fade-in" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-101 w-[95vw] max-w-6xl max-h-[90vh] overflow-hidden rounded-lg bg-slate-900/95 backdrop-blur-lg border-2 border-white/20 shadow-2xl animate-in fade-in zoom-in-95">
             {/* Glass effect layers */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent rounded-lg pointer-events-none" />
-            <div className="absolute inset-0 bg-gradient-to-tl from-blue-500/5 via-transparent to-transparent rounded-lg pointer-events-none" />
+            <div className="absolute inset-0 bg-linear-to-br from-white/10 via-transparent to-transparent rounded-lg pointer-events-none" />
+            <div className="absolute inset-0 bg-linaer-to-tl from-blue-500/5 via-transparent to-transparent rounded-lg pointer-events-none" />
             {/* Header */}
             <div className="relative z-10 p-6 border-b border-white/10 space-y-4">
               <div className="flex items-center justify-between">
