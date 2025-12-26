@@ -41,43 +41,124 @@ interface DistributionItem {
 }
 
 // Version Distribution Component
-export function VersionDistributionChart() {
-  const [data, setData] = useState<Record<string, number>>({})
-  const [loading, setLoading] = useState(true)
-  const [selectedVersion, setSelectedVersion] = useState<DistributionItem | null>(null)
+// Shared data for both charts
+interface SharedDistributionState {
+  versionDistribution: Record<string, number>;
+  countryDistribution: Record<string, number>;
+  cityData: Record<string, Record<string, number>>;
+  allNodes: any[];
+  countryMetrics: {
+    storage: Record<string, number>;
+    health: Record<string, number>;
+    credit: Record<string, number>;
+  };
+  loading: boolean;
+}
+
+const useDistributionData = () => {
+  const [state, setState] = useState<SharedDistributionState>({
+    versionDistribution: {},
+    countryDistribution: {},
+    cityData: {},
+    allNodes: [],
+    countryMetrics: { storage: {}, health: {}, credit: {} },
+    loading: true,
+  });
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await fetch('/api/pnodes', { cache: 'no-store' })
-        const result = await response.json()
-        setData(result.summary.versionDistribution || {})
+        const response = await fetch('/api/pnodes', { cache: 'no-store' });
+        const result = await response.json();
+        // Version Distribution
+        const versionDistribution = result.summary.versionDistribution || {};
+        // Country Distribution
+        const countryDistribution = result.summary.countryDistribution || {};
+        // All nodes
+        const allNodes = result.pNodes || [];
+        // Calculate country-level metrics
+        const storageByCountry: Record<string, number> = {};
+        const healthByCountry: Record<string, { total: number, count: number }> = {};
+        const creditsByCountry: Record<string, number> = {};
+        if (allNodes) {
+          allNodes.forEach((node: any) => {
+            const country = node.country || 'Unknown';
+            // Storage
+            let nodeStorageBytes = 0;
+            if (node.storageUsed && node.storageUsed > 0) {
+              nodeStorageBytes = node.storageUsed;
+            }
+            storageByCountry[country] = (storageByCountry[country] || 0) + nodeStorageBytes;
+            // Health
+            const nodeHealth = node.healthScore || 0;
+            if (!healthByCountry[country]) {
+              healthByCountry[country] = { total: 0, count: 0 };
+            }
+            healthByCountry[country].total += nodeHealth;
+            healthByCountry[country].count += 1;
+            // Credits
+            const nodeCredits = node.credits || 0;
+            creditsByCountry[country] = (creditsByCountry[country] || 0) + nodeCredits;
+          });
+        }
+        // Convert health to averages
+        const avgHealthByCountry: Record<string, number> = {};
+        Object.entries(healthByCountry).forEach(([country, data]) => {
+          avgHealthByCountry[country] = data.total / data.count;
+        });
+        // Build city data from nodes
+        const cityByCountry: Record<string, Record<string, number>> = {};
+        if (allNodes) {
+          allNodes.forEach((node: any) => {
+            const country = node.country || 'Unknown';
+            const city = node.city || 'Unknown';
+            if (!cityByCountry[country]) {
+              cityByCountry[country] = {};
+            }
+            cityByCountry[country][city] = (cityByCountry[country][city] || 0) + 1;
+          });
+        }
+        setState({
+          versionDistribution,
+          countryDistribution,
+          cityData: cityByCountry,
+          allNodes,
+          countryMetrics: {
+            storage: storageByCountry,
+            health: avgHealthByCountry,
+            credit: creditsByCountry,
+          },
+          loading: false,
+        });
       } catch (error) {
-        console.error('Failed to fetch version distribution:', error)
-      } finally {
-        setLoading(false)
+        setState((prev) => ({ ...prev, loading: false }));
       }
     }
+    fetchData();
+    const interval = setInterval(fetchData, 30 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+  return state;
+};
 
-    fetchData()
-    const interval = setInterval(fetchData, 30 * 1000) // Refresh every 30s
-    return () => clearInterval(interval)
-  }, [])
+export function VersionDistributionChart() {
+  const { versionDistribution, loading } = useDistributionData();
+  const [selectedVersion, setSelectedVersion] = useState<DistributionItem | null>(null);
 
   if (loading) {
     return (
       <div className="rounded-xl bg-sidebar/40 backdrop-blur-xl p-6 h-80 animate-pulse" />
-    )
+    );
   }
 
-  const versionData = Object.entries(data)
+  const versionData = Object.entries(versionDistribution)
     .map(([version, count]) => ({
       name: version,
       value: count
     }))
-    .sort((a, b) => b.value - a.value)
+    .sort((a, b) => b.value - a.value);
 
-  const totalVersions = Object.values(data).reduce((sum, count) => sum + count, 0)
+  const totalVersions = Object.values(versionDistribution).reduce((sum, count) => sum + count, 0);
 
   // Custom tooltip for pie chart
   const CustomTooltip = ({ active, payload }: any) => {
@@ -294,132 +375,39 @@ export function VersionDistributionChart() {
 }
 
 // Country Distribution Component
+
 export function CountryDistributionChart() {
-  const [data, setData] = useState<Record<string, number>>({})
-  const [cityData, setCityData] = useState<Record<string, Record<string, number>>>({})
-  const [loading, setLoading] = useState(true)
-  const [selectedCountry, setSelectedCountry] = useState<DistributionItem | null>(null)
-  const [showMapView, setShowMapView] = useState(false)
-  const [allNodes, setAllNodes] = useState<any[]>([])
-  const [mapViewMode, setMapViewMode] = useState<'storage' | 'health' | 'credit'>('storage')
-  const [zoom, setZoom] = useState(1)
-  const [center, setCenter] = useState<[number, number]>([0, 20])
-  const [countryMetrics, setCountryMetrics] = useState<{
-    storage: Record<string, number>,
-    health: Record<string, number>,
-    credit: Record<string, number>
-  }>({
-    storage: {},
-    health: {},
-    credit: {}
-  })
+  const {
+    countryDistribution,
+    cityData,
+    loading,
+    allNodes,
+    countryMetrics
+  } = useDistributionData();
+  const [selectedCountry, setSelectedCountry] = useState<DistributionItem | null>(null);
+  const [showMapView, setShowMapView] = useState(false);
+  const [mapViewMode, setMapViewMode] = useState<'storage' | 'health' | 'credit'>('storage');
+  const [zoom, setZoom] = useState(1);
+  const [center, setCenter] = useState<[number, number]>([0, 20]);
   // Tooltip state for map markers
-  const [hoveredNode, setHoveredNode] = useState<any | null>(null)
-  const [mousePos, setMousePos] = useState<{x: number, y: number}>({x: 0, y: 0})
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const response = await fetch('/api/pnodes', { cache: 'no-store' })
-        const result = await response.json()
-        console.log('[Country Distribution] Fetched data:', {
-          countryDistribution: result.summary?.countryDistribution,
-          pNodesCount: result.pNodes?.length,
-          hasCountryData: Object.keys(result.summary?.countryDistribution || {}).length > 0
-        })
-        setData(result.summary.countryDistribution || {})
-        setAllNodes(result.pNodes || [])
-        
-        // Calculate country-level metrics
-        const storageByCountry: Record<string, number> = {}
-        const healthByCountry: Record<string, { total: number, count: number }> = {}
-        const creditsByCountry: Record<string, number> = {}
-        
-        if (result.pNodes) {
-          result.pNodes.forEach((node: any) => {
-            const country = node.country || 'Unknown'
-            
-            // Aggregate storage from real node data - use storageUsed from get-pods-with-stats
-            let nodeStorageBytes = 0
-            if (node.storageUsed && node.storageUsed > 0) {
-              nodeStorageBytes = node.storageUsed
-            }
-            storageByCountry[country] = (storageByCountry[country] || 0) + nodeStorageBytes
-            
-            // Aggregate actual health scores for averaging
-            const nodeHealth = node.healthScore || 0
-            if (!healthByCountry[country]) {
-              healthByCountry[country] = { total: 0, count: 0 }
-            }
-            healthByCountry[country].total += nodeHealth
-            healthByCountry[country].count += 1
-            
-            // Aggregate actual credits from podcredits API
-            const nodeCredits = node.credits || 0
-            creditsByCountry[country] = (creditsByCountry[country] || 0) + nodeCredits
-          })
-        }
-        
-        // Convert health to averages
-        const avgHealthByCountry: Record<string, number> = {}
-        Object.entries(healthByCountry).forEach(([country, data]) => {
-          avgHealthByCountry[country] = data.total / data.count
-        })
-        
-        setCountryMetrics({
-          storage: storageByCountry,
-          health: avgHealthByCountry,
-          credit: creditsByCountry
-        })
-        
-        // Build city data from nodes
-        const cityByCountry: Record<string, Record<string, number>> = {}
-        if (result.pNodes) {
-          result.pNodes.forEach((node: any) => {
-            const country = node.country || 'Unknown'
-            const city = node.city || 'Unknown'
-            
-            if (!cityByCountry[country]) {
-              cityByCountry[country] = {}
-            }
-            cityByCountry[country][city] = (cityByCountry[country][city] || 0) + 1
-          })
-        }
-        setCityData(cityByCountry)
-      } catch (error) {
-        console.error('Failed to fetch country distribution:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchData()
-    const interval = setInterval(fetchData, 30 * 1000) // Refresh every 30s
-    return () => clearInterval(interval)
-  }, [])
+  const [hoveredNode, setHoveredNode] = useState<any | null>(null);
+  const [mousePos, setMousePos] = useState<{x: number, y: number}>({x: 0, y: 0});
 
   if (loading) {
     return (
       <div className="rounded-xl bg-sidebar/40 backdrop-blur-xl p-6 h-80 animate-pulse" />
-    )
+    );
   }
 
-  const countryData: DistributionItem[] = Object.entries(data)
+  const countryData: DistributionItem[] = Object.entries(countryDistribution)
     .map(([country, count]) => ({
       name: country,
       value: count
     }))
     .sort((a, b) => b.value - a.value)
-    .slice(0, 8)
+    .slice(0, 8);
 
-  const totalCountries = Object.values(data).reduce((sum, count) => sum + count, 0)
-  
-  console.log('[Country Distribution Render]', {
-    dataKeys: Object.keys(data),
-    countryDataLength: countryData.length,
-    totalCountries,
-    rawData: data
-  })
+  const totalCountries = Object.values(countryDistribution).reduce((sum, count) => sum + count, 0);
 
   return (
     <div 
@@ -572,7 +560,7 @@ export function CountryDistributionChart() {
                     Global Node Distribution
                   </Dialog.Title>
                   <Dialog.Description className="text-xs text-sidebar-foreground/60 mt-1">
-                    Geographic distribution of {allNodes.length} nodes across {Object.keys(data).length} countries
+                    Geographic distribution of {allNodes.length} nodes across {Object.keys(countryDistribution).length} countries
                   </Dialog.Description>
                 </div>
                 <Dialog.Close className="rounded-lg p-2 hover:bg-white/10 transition-colors">
@@ -664,11 +652,11 @@ export function CountryDistributionChart() {
                   <Geographies geography="https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json">
                     {({ geographies }) => {
                       // Calculate max node count for color scaling
-                      const maxNodeCount = Math.max(...Object.values(data), 1)
+                      const maxNodeCount = Math.max(...Object.values(countryDistribution), 1)
                       
                       return geographies.map((geo) => {
                         const countryName = geo.properties.name
-                        const nodeCount = data[countryName] || 0
+                        const nodeCount = countryDistribution[countryName] || 0
                         const hasNodes = nodeCount > 0
                         const intensity = nodeCount / maxNodeCount
                         
@@ -743,8 +731,8 @@ export function CountryDistributionChart() {
                     .filter(node => node.latitude && node.longitude)
                     .map((node, index) => {
                       // Get country node count for color intensity
-                      const countryNodeCount = data[node.country] || 0
-                      const maxNodeCount = Math.max(...Object.values(data), 1)
+                      const countryNodeCount = countryDistribution[node.country] || 0
+                      const maxNodeCount = Math.max(...Object.values(countryDistribution), 1)
                       const intensity = countryNodeCount / maxNodeCount
                       let markerColor = 'rgba(34, 197, 94, 0.8)' // Default green
                       if (mapViewMode === 'storage') {
