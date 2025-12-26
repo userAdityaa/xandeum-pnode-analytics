@@ -17,14 +17,13 @@ export function StorageOverviewCard() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await fetch('/api/pnodes', { cache: 'no-store' })
+        const response = await fetch('/api/pnodes/storage-overview', { cache: 'no-store' })
         const result = await response.json()
-        
         setData({
-          publicNodes: result.summary.publicNodes || 0,
-          privateNodes: result.summary.privateNodes || 0,
-          networkStorageTotal: result.summary.networkStorageTotal || 0,
-          aggregateStorageUsed: result.summary.aggregateStorageUsed || 0,
+          publicNodes: result.publicNodes || 0,
+          privateNodes: result.privateNodes || 0,
+          networkStorageTotal: result.networkStorageTotal || 0,
+          aggregateStorageUsed: result.aggregateStorageUsed || 0,
         })
       } catch (error) {
         console.error('Failed to fetch storage data:', error)
@@ -32,9 +31,8 @@ export function StorageOverviewCard() {
         setLoading(false)
       }
     }
-
     fetchData()
-    const interval = setInterval(fetchData, 30 * 1000) // Refresh every 30s
+    const interval = setInterval(fetchData, 30 * 1000)
     return () => clearInterval(interval)
   }, [])
 

@@ -66,78 +66,94 @@ const useDistributionData = () => {
   });
 
   useEffect(() => {
-    async function fetchData() {
+    let didFetchDetailed = false;
+    async function fetchBasicData() {
       try {
-        const response = await fetch('/api/pnodes', { cache: 'no-store' });
-        const result = await response.json();
-        // Version Distribution
-        const versionDistribution = result.summary.versionDistribution || {};
-        // Country Distribution
-        const countryDistribution = result.summary.countryDistribution || {};
-        // All nodes
-        const allNodes = result.pNodes || [];
-        // Calculate country-level metrics
-        const storageByCountry: Record<string, number> = {};
-        const healthByCountry: Record<string, { total: number, count: number }> = {};
-        const creditsByCountry: Record<string, number> = {};
-        if (allNodes) {
-          allNodes.forEach((node: any) => {
-            const country = node.country || 'Unknown';
-            // Storage
-            let nodeStorageBytes = 0;
-            if (node.storageUsed && node.storageUsed > 0) {
-              nodeStorageBytes = node.storageUsed;
-            }
-            storageByCountry[country] = (storageByCountry[country] || 0) + nodeStorageBytes;
-            // Health
-            const nodeHealth = node.healthScore || 0;
-            if (!healthByCountry[country]) {
-              healthByCountry[country] = { total: 0, count: 0 };
-            }
-            healthByCountry[country].total += nodeHealth;
-            healthByCountry[country].count += 1;
-            // Credits
-            const nodeCredits = node.credits || 0;
-            creditsByCountry[country] = (creditsByCountry[country] || 0) + nodeCredits;
-          });
+        // Fetch version distribution
+        const versionRes = await fetch('/api/pnodes/version-distribution', { cache: 'no-store' });
+        const versionJson = await versionRes.json();
+        const versionDistribution = versionJson.versionDistribution || {};
+
+        // Fetch country distribution
+        const countryRes = await fetch('/api/pnodes/country-distribution', { cache: 'no-store' });
+        const countryJson = await countryRes.json();
+        const countryDistribution = countryJson.countryDistribution || {};
+
+        setState((prev) => ({
+          ...prev,
+          versionDistribution,
+          countryDistribution,
+          loading: false,
+        }));
+
+        // After charts are shown, fetch detailed node data in background
+        if (!didFetchDetailed) {
+          didFetchDetailed = true;
+          fetchDetailedData();
         }
-        // Convert health to averages
-        const avgHealthByCountry: Record<string, number> = {};
+      } catch (error) {
+        setState((prev) => ({ ...prev, loading: false }));
+      }
+    }
+
+    async function fetchDetailedData() {
+      try {
+        const nodesRes = await fetch('/api/pnodes', { cache: 'no-store' });
+        const nodesJson = await nodesRes.json();
+        const allNodes = nodesJson.pNodes || [];
+        let cityByCountry: Record<string, Record<string, number>> = {};
+        let storageByCountry: Record<string, number> = {};
+        let healthByCountry: Record<string, { total: number, count: number }> = {};
+        let creditsByCountry: Record<string, number> = {};
+        let avgHealthByCountry: Record<string, number> = {};
+        allNodes.forEach((node: any) => {
+          const country = node.country || 'Unknown';
+          // Storage
+          let nodeStorageBytes = 0;
+          if (node.storageUsed && node.storageUsed > 0) {
+            nodeStorageBytes = node.storageUsed;
+          }
+          storageByCountry[country] = (storageByCountry[country] || 0) + nodeStorageBytes;
+          // Health
+          const nodeHealth = node.healthScore || 0;
+          if (!healthByCountry[country]) {
+            healthByCountry[country] = { total: 0, count: 0 };
+          }
+          healthByCountry[country].total += nodeHealth;
+          healthByCountry[country].count += 1;
+          // Credits
+          const nodeCredits = node.credits || 0;
+          creditsByCountry[country] = (creditsByCountry[country] || 0) + nodeCredits;
+          // City
+          const city = node.city || 'Unknown';
+          if (!cityByCountry[country]) {
+            cityByCountry[country] = {};
+          }
+          cityByCountry[country][city] = (cityByCountry[country][city] || 0) + 1;
+        });
         Object.entries(healthByCountry).forEach(([country, data]) => {
           avgHealthByCountry[country] = data.total / data.count;
         });
-        // Build city data from nodes
-        const cityByCountry: Record<string, Record<string, number>> = {};
-        if (allNodes) {
-          allNodes.forEach((node: any) => {
-            const country = node.country || 'Unknown';
-            const city = node.city || 'Unknown';
-            if (!cityByCountry[country]) {
-              cityByCountry[country] = {};
-            }
-            cityByCountry[country][city] = (cityByCountry[country][city] || 0) + 1;
-          });
-        }
-        setState({
-          versionDistribution,
-          countryDistribution,
-          cityData: cityByCountry,
+        setState((prev) => ({
+          ...prev,
           allNodes,
+          cityData: cityByCountry,
           countryMetrics: {
             storage: storageByCountry,
             health: avgHealthByCountry,
             credit: creditsByCountry,
           },
-          loading: false,
-        });
-      } catch (error) {
-        setState((prev) => ({ ...prev, loading: false }));
+        }));
+      } catch (err) {
+        // If /api/pnodes fails, skip city/metrics
       }
     }
-    fetchData();
-    const interval = setInterval(fetchData, 30 * 1000);
+
+    fetchBasicData();
+    const interval = setInterval(fetchBasicData, 30 * 1000);
     return () => clearInterval(interval);
   }, []);
+
   return state;
 };
 
